@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Imperion Design System - Imperial Dark Theme with Gold Accents */
+
+@layer base {
+  :root {
+    /* Imperial Dark Theme */
+    --background: 0 0% 7%;
+    --foreground: 48 5% 90%;
+
+    --card: 0 0% 11%;
+    --card-foreground: 48 5% 90%;
+
+    --popover: 0 0% 9%;
+    --popover-foreground: 48 5% 90%;
+
+    /* Imperial Gold */
+    --primary: 51 99% 50%;
+    --primary-foreground: 0 0% 7%;
+
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 48 5% 90%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 49 98% 49%;
+    --accent-foreground: 0 0% 7%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 51 99% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom Imperial tokens */
+    --imperial-black: 0 0% 7%;
+    --imperial-dark: 0 0% 11%;
+    --imperial-gold: 51 99% 50%;
+    --imperial-gold-dark: 49 98% 49%;
+    --imperial-gold-glow: 51 100% 60%;
+
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(51, 99%, 50%) 0%, hsl(43, 96%, 56%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 11%) 0%, hsl(0, 0%, 7%) 100%);
+    --gradient-radial: radial-gradient(ellipse at center, hsl(0, 0%, 15%) 0%, hsl(0, 0%, 7%) 70%);
+
+    /* Shadows */
+    --shadow-gold: 0 0 30px hsla(51, 99%, 50%, 0.3);
+    --shadow-gold-sm: 0 0 15px hsla(51, 99%, 50%, 0.2);
+    --shadow-card: 0 4px 20px hsla(0, 0%, 0%, 0.4);
+
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 48 5% 90%;
+    --sidebar-primary: 51 99% 50%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 48 5% 90%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 51 99% 50%;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 48 5% 90%;
+    --card: 0 0% 11%;
+    --card-foreground: 48 5% 90%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 48 5% 90%;
+    --primary: 51 99% 50%;
+    --primary-foreground: 0 0% 7%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 48 5% 90%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 49 98% 49%;
+    --accent-foreground: 0 0% 7%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 51 99% 50%;
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 48 5% 90%;
+    --sidebar-primary: 51 99% 50%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 48 5% 90%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 51 99% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(51, 99%, 50%) 0%, hsl(43, 96%, 56%) 100%);
+  }
+
+  .bg-gradient-gold {
+    background-image: linear-gradient(135deg, hsl(51, 99%, 50%) 0%, hsl(43, 96%, 56%) 100%);
+  }
+
+  .bg-gradient-dark {
+    background-image: linear-gradient(180deg, hsl(0, 0%, 11%) 0%, hsl(0, 0%, 7%) 100%);
+  }
+
+  .shadow-gold {
+    box-shadow: 0 0 30px hsla(51, 99%, 50%, 0.3);
+  }
+
+  .shadow-gold-sm {
+    box-shadow: 0 0 15px hsla(51, 99%, 50%, 0.2);
+  }
+
+  .glow-gold {
+    filter: drop-shadow(0 0 10px hsla(51, 99%, 50%, 0.5));
+  }
+
+  .border-gradient-gold {
+    border: 1px solid transparent;
+    background: linear-gradient(hsl(0, 0%, 11%), hsl(0, 0%, 11%)) padding-box,
+                linear-gradient(135deg, hsl(51, 99%, 50%) 0%, hsl(43, 96%, 56%) 100%) border-box;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-gold {
+    animation: pulse-gold 2s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background-size: 200% 100%;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { 
+    box-shadow: 0 0 20px hsla(51, 99%, 50%, 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 40px hsla(51, 99%, 50%, 0.4);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
