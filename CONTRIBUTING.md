@@ -1,6 +1,6 @@
-# Руководство для разработчиков Imperion-Pro
+# Руководство для разработчиков Imperion
 
-Спасибо за интерес к разработке Imperion-Pro! Это руководство поможет вам начать работу над проектом.
+Спасибо за интерес к разработке Imperion! Это руководство поможет вам начать работу над проектом.
 
 ## Содержание
 
@@ -26,8 +26,8 @@
 1. Форкните репозиторий
 2. Клонируйте свой форк:
 ```bash
-git clone https://github.com/YOUR_USERNAME/Imperion-Pro.git
-cd Imperion-Pro
+git clone https://github.com/YOUR_USERNAME/Imperion.git
+cd Imperion
 ```
 
 3. Установите зависимости:
@@ -45,7 +45,7 @@ npm run dev
 ## Структура проекта
 
 ```
-Imperion-Pro/
+Imperion/
 ├── src/
 │   ├── auth/              # Логика аутентификации
 │   ├── components/        # React компоненты
@@ -349,4 +349,4 @@ create policy "Users can read own data"
 2. Посмотрите похожий код в проекте
 3. Создайте issue в GitHub
 
-Спасибо за ваш вклад в Imperion-Pro! 🚀
+Спасибо за ваш вклад в Imperion! 🚀

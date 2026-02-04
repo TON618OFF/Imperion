@@ -1,18 +1,18 @@
-# 🚀 Быстрый старт Imperion-Pro
+# 🚀 Быстрый старт Imperion
 
 Краткое руководство для запуска проекта за 5 минут.
 
 ## 📋 Что это?
 
-**Imperion-Pro** — интерактивная платформа для изучения программирования с практическими уроками по Python, JavaScript, C++, C и Go.
+**Imperion** — интерактивная платформа для изучения программирования с практическими уроками по Python, JavaScript, C++, C и Go.
 
 ## ⚡ Установка (2 минуты)
 
 ### 1. Клонируйте репозиторий
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Imperion-Pro.git
-cd Imperion-Pro
+git clone https://github.com/YOUR_USERNAME/Imperion.git
+cd Imperion
 ```
 
 ### 2. Установите зависимости
@@ -165,6 +165,6 @@ npm test
 
 ---
 
-**Готово!** Теперь вы можете начать работу с Imperion-Pro 🚀
+**Готово!** Теперь вы можете начать работу с Imperion 🚀
 
 Если возникли вопросы — см. подробную документацию или создайте issue на GitHub.

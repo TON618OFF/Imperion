@@ -8,9 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import AuthLayout from "./pages/auth/AuthLayout";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
+import Auth from "./pages/Auth";
 import AppLayout from "./pages/app/AppLayout";
 import Dashboard from "./pages/app/Dashboard";
 import Profile from "./pages/app/Profile";
@@ -37,11 +35,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-
-            <Route path="/auth" element={<AuthLayout />}>
-              <Route path="login" element={<Login />} />
-              <Route path="register" element={<Register />} />
-            </Route>
+            <Route path="/auth" element={<Auth />} />
 
             <Route path="/app" element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>

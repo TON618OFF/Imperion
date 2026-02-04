@@ -6,8 +6,14 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signInWithPassword: (params: { email: string; password: string }) => Promise<void>;
-  signUpWithPassword: (params: { email: string; password: string }) => Promise<void>;
+  signInWithPassword: (params: {
+    email: string;
+    password: string;
+  }) => Promise<void>;
+  signUpWithPassword: (params: {
+    email: string;
+    password: string;
+  }) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -16,7 +22,9 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bootstrappedUserId, setBootstrappedUserId] = useState<string | null>(null);
+  const [bootstrappedUserId, setBootstrappedUserId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -72,7 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user ?? null,
       loading,
       signInWithPassword: async ({ email, password }) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (error) throw error;
       },
       signUpWithPassword: async ({ email, password }) => {

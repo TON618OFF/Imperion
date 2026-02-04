@@ -43,10 +43,10 @@ const Header = () => {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
             <Button asChild variant="ghost" size="sm">
-              <Link to="/auth/login">Войти</Link>
+              <Link to="/auth">Войти</Link>
             </Button>
             <Button asChild variant="imperial" size="sm">
-              <Link to="/auth/register">Начать обучение</Link>
+              <Link to="/auth?tab=signup">Начать обучение</Link>
             </Button>
           </div>
 
@@ -55,7 +55,11 @@ const Header = () => {
             className="md:hidden text-foreground p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </nav>
 
@@ -75,10 +79,10 @@ const Header = () => {
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
                 <Button asChild variant="outline" className="w-full">
-                  <Link to="/auth/login">Войти</Link>
+                  <Link to="/auth">Войти</Link>
                 </Button>
                 <Button asChild variant="imperial" className="w-full">
-                  <Link to="/auth/register">Начать обучение</Link>
+                  <Link to="/auth?tab=signup">Начать обучение</Link>
                 </Button>
               </div>
             </div>

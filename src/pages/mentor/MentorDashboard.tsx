@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import MarkdownEditor from "@/components/MarkdownEditor";
 import {
   Select,
   SelectContent,
@@ -674,7 +675,7 @@ export default function MentorDashboard() {
             Панель <span className="text-gradient-gold">Ментора</span>
           </h1>
           <div className="text-muted-foreground max-w-2xl">
-            Управление уроками и лекциями платформы Imperion-Pro
+            Управление уроками и лекциями платформы Imperion
           </div>
         </div>
       </div>
@@ -1009,18 +1010,18 @@ export default function MentorDashboard() {
                 <Label htmlFor="content-markdown">
                   Описание задания (Markdown)
                 </Label>
-                <Textarea
-                  id="content-markdown"
+                <MarkdownEditor
                   value={contentForm.content_markdown}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     setContentForm({
                       ...contentForm,
-                      content_markdown: e.target.value,
+                      content_markdown: value,
                     })
                   }
-                  placeholder="# Задание&#10;&#10;Напишите программу, которая..."
-                  rows={8}
-                  className="font-mono text-sm"
+                  placeholder="# Задание
+
+Напишите программу, которая..."
+                  height={400}
                 />
               </div>
 
@@ -1080,19 +1081,21 @@ export default function MentorDashboard() {
                 {contentForm.hints.length > 0 ? (
                   <div className="space-y-2">
                     {contentForm.hints.map((hint, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Textarea
-                          value={hint}
-                          onChange={(e) => updateHint(index, e.target.value)}
-                          placeholder={`Подсказка ${index + 1}`}
-                          rows={2}
-                          className="flex-1 text-sm"
-                        />
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <MarkdownEditor
+                            value={hint}
+                            onChange={(value) => updateHint(index, value)}
+                            placeholder={`Подсказка ${index + 1} (Markdown)`}
+                            height={200}
+                          />
+                        </div>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => removeHint(index)}
+                          className="mt-2"
                         >
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
@@ -1197,16 +1200,16 @@ export default function MentorDashboard() {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="lecture-summary">Краткое описание</Label>
-                      <Textarea
-                        id="lecture-summary"
-                        value={lectureForm.summary}
-                        onChange={(e) =>
+                      <MarkdownEditor
+                        value={lectureForm.summary || ""}
+                        onChange={(value) =>
                           setLectureForm({
                             ...lectureForm,
-                            summary: e.target.value,
+                            summary: value,
                           })
                         }
-                        placeholder="Основы языка программирования Python"
+                        placeholder="Краткое описание лекции"
+                        height={200}
                       />
                     </div>
                     <div className="grid gap-2">
@@ -1365,151 +1368,6 @@ export default function MentorDashboard() {
           </Card>
         </TabsContent>
 
-        {/* Диалог управления контентом урока */}
-        <Dialog
-          open={contentDialogOpen}
-          onOpenChange={(open) => {
-            setContentDialogOpen(open);
-            if (!open) {
-              setEditingLessonForContent(null);
-              resetContentForm();
-            }
-          }}
-        >
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                Управление контентом: {editingLessonForContent?.title}
-              </DialogTitle>
-              <DialogDescription>
-                Настройте задание, стартовый код, ожидаемый результат и
-                подсказки
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="content-markdown">
-                  Описание задания (Markdown)
-                </Label>
-                <Textarea
-                  id="content-markdown"
-                  value={contentForm.content_markdown}
-                  onChange={(e) =>
-                    setContentForm({
-                      ...contentForm,
-                      content_markdown: e.target.value,
-                    })
-                  }
-                  placeholder="# Задание&#10;&#10;Напишите программу, которая..."
-                  rows={8}
-                  className="font-mono text-sm"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="starter-code">Стартовый код</Label>
-                <Textarea
-                  id="starter-code"
-                  value={contentForm.starter_code}
-                  onChange={(e) =>
-                    setContentForm({
-                      ...contentForm,
-                      starter_code: e.target.value,
-                    })
-                  }
-                  placeholder={`print("Hello, world!")  # для Python&#10;console.log("Hello");  // для JavaScript`}
-                  rows={6}
-                  className="font-mono text-sm"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="expected-stdout">
-                  Ожидаемый результат (expected_stdout)
-                </Label>
-                <Textarea
-                  id="expected-stdout"
-                  value={contentForm.expected_stdout}
-                  onChange={(e) =>
-                    setContentForm({
-                      ...contentForm,
-                      expected_stdout: e.target.value,
-                    })
-                  }
-                  placeholder="Hello, world!"
-                  rows={4}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Это значение будет сравниваться с выводом программы (stdout).
-                  Конечные пробелы и переводы строк игнорируются.
-                </p>
-              </div>
-
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label>Подсказки</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addHint}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Добавить подсказку
-                  </Button>
-                </div>
-                {contentForm.hints.length > 0 ? (
-                  <div className="space-y-2">
-                    {contentForm.hints.map((hint, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Textarea
-                          value={hint}
-                          onChange={(e) => updateHint(index, e.target.value)}
-                          placeholder={`Подсказка ${index + 1}`}
-                          rows={2}
-                          className="flex-1 text-sm"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeHint(index)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Подсказки не добавлены
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setContentDialogOpen(false);
-                  setEditingLessonForContent(null);
-                  resetContentForm();
-                }}
-              >
-                Отмена
-              </Button>
-              <Button
-                onClick={() => saveContentMutation.mutate()}
-                disabled={saveContentMutation.isPending}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Сохранить контент
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
         {/* Диалог управления секциями лекций */}
         <Dialog
           open={sectionsDialogOpen}
@@ -1577,19 +1435,19 @@ export default function MentorDashboard() {
                           <Label htmlFor={`section-content-${index}`}>
                             Контент (Markdown)
                           </Label>
-                          <Textarea
-                            id={`section-content-${index}`}
+                          <MarkdownEditor
                             value={section.content_markdown}
-                            onChange={(e) =>
-                              updateSection(
-                                index,
-                                "content_markdown",
-                                e.target.value,
-                              )
+                            onChange={(value) =>
+                              updateSection(index, "content_markdown", value)
                             }
-                            placeholder="# Заголовок&#10;&#10;Текст с **форматированием**&#10;&#10;```python&#10;print('Пример кода')&#10;```"
-                            rows={8}
-                            className="font-mono text-sm"
+                            placeholder="# Заголовок
+
+Текст с **форматированием**
+
+```python
+print('Пример кода')
+```"
+                            height={400}
                           />
                         </div>
                       </div>

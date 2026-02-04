@@ -1,4 +1,4 @@
-# 🎯 Первый запуск Imperion-Pro
+# 🎯 Первый запуск Imperion
 
 Пошаговая инструкция для первого запуска проекта. Следуйте шагам по порядку.
 
@@ -20,8 +20,8 @@
 ### 1.1 Клонируйте репозиторий
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Imperion-Pro.git
-cd Imperion-Pro
+git clone https://github.com/YOUR_USERNAME/Imperion.git
+cd Imperion
 ```
 
 ### 1.2 Установите зависимости
@@ -162,7 +162,7 @@ VITE v7.x.x  ready in xxx ms
 
 Откройте [http://localhost:5173](http://localhost:5173)
 
-✅ Должна загрузиться главная страница Imperion-Pro
+✅ Должна загрузиться главная страница Imperion
 
 ---
 
@@ -287,7 +287,7 @@ WHERE id = '12345678-1234-1234-1234-123456789abc';
 
 ## 🎉 Готово!
 
-Поздравляем! Вы успешно запустили Imperion-Pro!
+Поздравляем! Вы успешно запустили Imperion!
 
 ### Что делать дальше?
 
@@ -343,4 +343,4 @@ WHERE id = '12345678-1234-1234-1234-123456789abc';
 
 ---
 
-**Удачи в изучении программирования с Imperion-Pro! 🚀**
+**Удачи в изучении программирования с Imperion! 🚀**

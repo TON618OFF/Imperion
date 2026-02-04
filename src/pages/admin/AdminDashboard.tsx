@@ -90,9 +90,7 @@ export default function AdminDashboard() {
   const { data: usersByRole } = useQuery({
     queryKey: ["admin_users_by_role"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role");
+      const { data, error } = await supabase.from("profiles").select("role");
       if (error) throw error;
 
       const roleCount: Record<string, number> = {};
@@ -112,9 +110,7 @@ export default function AdminDashboard() {
   const { data: lessonsByLanguage } = useQuery({
     queryKey: ["admin_lessons_by_language"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("lessons")
-        .select("language");
+      const { data, error } = await supabase.from("lessons").select("language");
       if (error) throw error;
 
       const langCount: Record<string, number> = {};
@@ -161,14 +157,14 @@ export default function AdminDashboard() {
         .select("created_at")
         .gte(
           "created_at",
-          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         );
       if (error) throw error;
 
       const activityByDay: Record<string, number> = {};
       data?.forEach((transaction) => {
         const date = new Date(transaction.created_at).toLocaleDateString(
-          "ru-RU"
+          "ru-RU",
         );
         activityByDay[date] = (activityByDay[date] || 0) + 1;
       });
@@ -181,7 +177,7 @@ export default function AdminDashboard() {
         .sort(
           (a, b) =>
             new Date(a.date.split(".").reverse().join("-")).getTime() -
-            new Date(b.date.split(".").reverse().join("-")).getTime()
+            new Date(b.date.split(".").reverse().join("-")).getTime(),
         );
     },
   });
@@ -235,7 +231,7 @@ export default function AdminDashboard() {
             Панель <span className="text-gradient-gold">Администратора</span>
           </h1>
           <div className="text-muted-foreground max-w-2xl">
-            Полная статистика и аналитика платформы Imperion-Pro
+            Полная статистика и аналитика платформы Imperion
           </div>
         </div>
         <Button onClick={handleExportPDF} variant="imperial">
@@ -268,9 +264,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{lessonsCount || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Практических уроков
-            </p>
+            <p className="text-xs text-muted-foreground">Практических уроков</p>
           </CardContent>
         </Card>
 
@@ -294,7 +288,9 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{achievementsCount || 0}</div>
-            <p className="text-xs text-muted-foreground">Доступно для получения</p>
+            <p className="text-xs text-muted-foreground">
+              Доступно для получения
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -333,7 +329,9 @@ export default function AdminDashboard() {
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
           <CardHeader>
             <CardTitle>Уроки по языкам</CardTitle>
-            <CardDescription>Распределение уроков по языкам программирования</CardDescription>
+            <CardDescription>
+              Распределение уроков по языкам программирования
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -394,7 +392,9 @@ export default function AdminDashboard() {
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
           <CardHeader>
             <CardTitle>Уроки по сложности</CardTitle>
-            <CardDescription>Распределение уроков по уровням сложности</CardDescription>
+            <CardDescription>
+              Распределение уроков по уровням сложности
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -470,9 +470,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              База данных
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">База данных</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -482,12 +480,17 @@ export default function AdminDashboard() {
                 <span className="text-sm font-medium">PostgreSQL</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Провайдер:</span>
+                <span className="text-sm text-muted-foreground">
+                  Провайдер:
+                </span>
                 <span className="text-sm font-medium">Supabase</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Статус:</span>
-                <Badge variant="secondary" className="bg-green-500/10 text-green-500 border-green-500/20">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-500/10 text-green-500 border-green-500/20"
+                >
                   Активна
                 </Badge>
               </div>
@@ -497,9 +500,7 @@ export default function AdminDashboard() {
 
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Storage
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Storage</CardTitle>
             <HardDrive className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -509,12 +510,17 @@ export default function AdminDashboard() {
                 <span className="text-sm font-medium">avatars</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Публичный:</span>
+                <span className="text-sm text-muted-foreground">
+                  Публичный:
+                </span>
                 <span className="text-sm font-medium">Да</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Статус:</span>
-                <Badge variant="secondary" className="bg-green-500/10 text-green-500 border-green-500/20">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-500/10 text-green-500 border-green-500/20"
+                >
                   Активен
                 </Badge>
               </div>

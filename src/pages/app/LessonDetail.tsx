@@ -32,8 +32,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { CheckCircle2, XCircle, Play, Trophy, Clock } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type LessonRow = {
   id: string;
@@ -61,6 +62,12 @@ type SubmissionRow = {
   stdin: string | null;
   piston_result: any;
   passed: boolean | null;
+};
+
+type TestCase = {
+  input?: string;
+  expected_output: string;
+  description?: string;
 };
 
 export default function LessonDetail() {
@@ -116,14 +123,16 @@ export default function LessonDetail() {
   }, [item?.starter_code, lesson]);
 
   const [code, setCode] = useState<string>("");
-  const [stdin, setStdin] = useState<string>("");
-  const [activeIO, setActiveIO] = useState<string>("output");
-  const [runResult, setRunResult] = useState<{
-    stdout?: string;
-    stderr?: string;
-    output?: string;
-    code?: number;
-    signal?: string;
+  const [activeTab, setActiveTab] = useState<string>("result");
+  const [testResults, setTestResults] = useState<{
+    passed: number;
+    total: number;
+    details: Array<{
+      passed: boolean;
+      expected: string;
+      got: string;
+      description?: string;
+    }>;
   } | null>(null);
 
   useEffect(() => {
@@ -146,9 +155,30 @@ export default function LessonDetail() {
     },
   });
 
-  const expectedStdout = (item?.tests?.expected_stdout ?? null) as
-    | string
-    | null;
+  // Получаем тестовые случаи из данных урока
+  const testCases: TestCase[] = useMemo(() => {
+    if (!item?.tests) return [];
+
+    // Поддержка старого формата (expected_stdout)
+    if (
+      item.tests.expected_stdout &&
+      typeof item.tests.expected_stdout === "string"
+    ) {
+      return [
+        {
+          expected_output: item.tests.expected_stdout,
+          description: "Основной тест",
+        },
+      ];
+    }
+
+    // Новый формат с массивом тестов
+    if (Array.isArray(item.tests.test_cases)) {
+      return item.tests.test_cases;
+    }
+
+    return [];
+  }, [item?.tests]);
 
   const normalize = (s: string) => {
     const x = (s ?? "").replace(/\r\n/g, "\n");
@@ -179,20 +209,37 @@ export default function LessonDetail() {
       if (!lesson) throw new Error("Lesson is not loaded");
       if (!user) throw new Error("Not authenticated");
 
-      const result = await pistonExecute({
-        language: lesson.language,
-        code,
-        stdin,
-      });
+      // Запускаем тесты
+      const results = [];
+      let passedCount = 0;
 
-      const computedPassed =
-        typeof expectedStdout === "string" && expectedStdout.length > 0
-          ? normalize(result.stdout ?? result.output ?? "") ===
-              normalize(expectedStdout) &&
-            normalize(result.stderr ?? "") === "" &&
-            (result.code ?? 0) === 0
-          : false;
+      for (const testCase of testCases) {
+        const result = await pistonExecute({
+          language: lesson.language,
+          code,
+          stdin: testCase.input || "",
+        });
 
+        const output = normalize(result.stdout ?? result.output ?? "");
+        const expectedOutput = normalize(testCase.expected_output);
+        const passed = output === expectedOutput && (result.code ?? 0) === 0;
+
+        if (passed) passedCount++;
+
+        results.push({
+          passed,
+          expected: testCase.expected_output,
+          got: result.stdout ?? result.output ?? "",
+          description: testCase.description,
+          stderr: result.stderr,
+          exitCode: result.code,
+        });
+      }
+
+      const allPassed =
+        passedCount === testCases.length && testCases.length > 0;
+
+      // Сохраняем submission
       const { error: insertError } = await supabase
         .from("code_submissions")
         .insert({
@@ -201,13 +248,16 @@ export default function LessonDetail() {
           item_id: item?.id ?? null,
           language: lesson.language,
           code,
-          stdin,
-          piston_result: result,
-          passed: computedPassed,
-          score: null,
+          stdin: "",
+          piston_result: results,
+          passed: allPassed,
+          score: allPassed
+            ? 100
+            : Math.round((passedCount / testCases.length) * 100),
         });
       if (insertError) throw insertError;
 
+      // Обновляем прогресс
       const { data: existingProgress, error: existingProgressError } =
         await supabase
           .from("user_lesson_progress")
@@ -224,7 +274,7 @@ export default function LessonDetail() {
           .upsert({
             user_id: user.id,
             lesson_id: lesson.id,
-            status: "в_процессе",
+            status: allPassed ? "завершён" : "в_процессе",
             started_at: nowIso,
             last_attempt_at: nowIso,
             updated_at: nowIso,
@@ -232,15 +282,32 @@ export default function LessonDetail() {
         if (progressError) throw progressError;
       }
 
-      return result;
+      return { passedCount, totalCount: testCases.length, results };
     },
     onSuccess: (result) => {
-      setRunResult(result);
-      setActiveIO("output");
+      setTestResults({
+        passed: result.passedCount,
+        total: result.totalCount,
+        details: result.results,
+      });
+      setActiveTab("result");
       qc.invalidateQueries({ queryKey: ["lesson_progress", user?.id] });
       qc.invalidateQueries({
         queryKey: ["code_submissions", user?.id, lesson?.id],
       });
+
+      if (result.passedCount === result.totalCount && result.totalCount > 0) {
+        toast({
+          title: "🎉 Все тесты пройдены!",
+          description: "Отличная работа! Вы можете завершить урок.",
+        });
+      } else {
+        toast({
+          title: "Тесты не пройдены",
+          description: `Пройдено ${result.passedCount} из ${result.totalCount} тестов. Попробуйте еще раз!`,
+          variant: "destructive",
+        });
+      }
     },
     onError: (e: any) => {
       toast({
@@ -263,8 +330,8 @@ export default function LessonDetail() {
     },
     onSuccess: () => {
       toast({
-        title: "Урок завершён",
-        description: "Начисление XP и серия обновятся автоматически.",
+        title: "🏆 Урок завершён!",
+        description: "XP начислен. Продолжайте обучение!",
       });
       qc.invalidateQueries({ queryKey: ["user_xp", user?.id] });
       qc.invalidateQueries({ queryKey: ["user_streaks", user?.id] });
@@ -303,6 +370,11 @@ export default function LessonDetail() {
     </Badge>
   );
 
+  const canComplete =
+    testResults &&
+    testResults.passed === testResults.total &&
+    testResults.total > 0;
+
   return (
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-4">
@@ -330,6 +402,11 @@ export default function LessonDetail() {
             >
               {lesson.type}
             </Badge>
+            {testCases.length > 0 && (
+              <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                {testCases.length} {testCases.length === 1 ? "тест" : "тестов"}
+              </Badge>
+            )}
             {runMutation.isPending ? (
               <Badge className="bg-primary/10 text-primary border-primary/20 animate-pulse">
                 Выполняется…
@@ -353,8 +430,8 @@ export default function LessonDetail() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
           <CardHeader>
-            <CardTitle>Материал</CardTitle>
-            <CardDescription>Теория/условие задания</CardDescription>
+            <CardTitle>Условие задачи</CardTitle>
+            <CardDescription>Внимательно прочитайте требования</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="prose prose-invert max-w-none">
@@ -362,19 +439,64 @@ export default function LessonDetail() {
                 {item?.content_markdown ?? ""}
               </ReactMarkdown>
             </div>
+
+            {testCases.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Примеры тестов:</h3>
+                  {testCases.slice(0, 3).map((test, idx) => (
+                    <Card key={idx} className="bg-muted/50">
+                      <CardContent className="pt-4">
+                        {test.description && (
+                          <div className="text-sm font-medium mb-2">
+                            {test.description}
+                          </div>
+                        )}
+                        {test.input && (
+                          <div className="mb-2">
+                            <div className="text-xs text-muted-foreground mb-1">
+                              Ввод:
+                            </div>
+                            <code className="text-xs bg-background p-2 rounded block">
+                              {test.input}
+                            </code>
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">
+                            Ожидаемый вывод:
+                          </div>
+                          <code className="text-xs bg-background p-2 rounded block">
+                            {test.expected_output}
+                          </code>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {testCases.length > 3 && (
+                    <div className="text-xs text-muted-foreground">
+                      + еще {testCases.length - 3} скрытых тестов
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
         <div className="space-y-6">
           <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
             <CardHeader>
-              <CardTitle>Редактор</CardTitle>
-              <CardDescription>Запуск в песочнице Piston</CardDescription>
+              <CardTitle>Редактор кода</CardTitle>
+              <CardDescription>
+                Напишите решение и запустите тесты
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <CodeMirror
                 value={code}
-                height="320px"
+                height="400px"
                 extensions={languageExtensions}
                 theme={oneDark}
                 onChange={(v) => setCode(v)}
@@ -383,137 +505,191 @@ export default function LessonDetail() {
               <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={() => runMutation.mutate()}
-                  disabled={runMutation.isPending || !lesson || !user}
+                  disabled={
+                    runMutation.isPending ||
+                    !lesson ||
+                    !user ||
+                    testCases.length === 0
+                  }
+                  className="flex items-center gap-2"
                 >
-                  Запустить
+                  <Play className="w-4 h-4" />
+                  Запустить тесты
                 </Button>
                 <Button
-                  variant="imperial"
+                  variant="default"
+                  className="bg-gradient-primary"
                   onClick={() => completeMutation.mutate()}
                   disabled={
                     completeMutation.isPending ||
                     !lesson ||
                     !user ||
-                    !lastSubmissionPassed
+                    !canComplete
                   }
                 >
+                  <Trophy className="w-4 h-4 mr-2" />
                   Завершить урок
                 </Button>
               </div>
 
-              {expectedStdout ? (
-                <div className="text-xs text-muted-foreground">
-                  Проверка: stdout должен совпасть с ожидаемым выводом
-                  (игнорируя конечные пробелы/переводы строк).
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground">
-                  Проверка: для этого урока ещё не настроен expected output —
-                  завершение будет недоступно.
-                </div>
+              {testCases.length === 0 && (
+                <Alert>
+                  <AlertTitle>Тесты не настроены</AlertTitle>
+                  <AlertDescription>
+                    Для этого урока еще не добавлены тестовые случаи. Обратитесь
+                    к ментору.
+                  </AlertDescription>
+                </Alert>
               )}
-
-              <Separator className="bg-primary/10" />
-
-              <Tabs value={activeIO} onValueChange={setActiveIO}>
-                <TabsList className="bg-secondary/50 border border-border">
-                  <TabsTrigger value="stdin">stdin</TabsTrigger>
-                  <TabsTrigger value="output">output</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="stdin" className="mt-4">
-                  <Textarea
-                    value={stdin}
-                    onChange={(e) => setStdin(e.target.value)}
-                    placeholder="Ввод для программы (опционально)"
-                    className="font-mono"
-                  />
-                </TabsContent>
-
-                <TabsContent value="output" className="mt-4 space-y-3">
-                  <div className="grid gap-2">
-                    <div className="text-sm font-medium">stdout</div>
-                    <Textarea
-                      value={runResult?.stdout ?? ""}
-                      readOnly
-                      className="font-mono min-h-[100px]"
-                      placeholder="stdout"
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <div className="text-sm font-medium">stderr</div>
-                    <Textarea
-                      value={runResult?.stderr ?? ""}
-                      readOnly
-                      className="font-mono min-h-[100px]"
-                      placeholder="stderr"
-                    />
-                  </div>
-
-                  <div className="text-xs text-muted-foreground">
-                    exit code: {runResult?.code ?? "-"}
-                    {runResult?.signal ? ` · signal: ${runResult.signal}` : ""}
-                  </div>
-                </TabsContent>
-              </Tabs>
             </CardContent>
           </Card>
 
           <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
             <CardHeader>
-              <CardTitle>Последние запуски</CardTitle>
+              <CardTitle>Результаты</CardTitle>
               <CardDescription>
-                Нажми на строку, чтобы восстановить код/ввод/результат
+                {testResults
+                  ? `${testResults.passed} из ${testResults.total} тестов пройдено`
+                  : "Запустите тесты для проверки решения"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[260px] rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Время</TableHead>
-                      <TableHead>Язык</TableHead>
-                      <TableHead>Статус</TableHead>
-                      <TableHead>Code</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(submissions ?? []).map((s) => (
-                      <TableRow
-                        key={s.id}
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setCode(s.code);
-                          setStdin(s.stdin ?? "");
-                          setRunResult(s.piston_result ?? null);
-                          setActiveIO("output");
-                        }}
-                      >
-                        <TableCell>
-                          {new Date(s.created_at).toLocaleString()}
-                        </TableCell>
-                        <TableCell>{s.language}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              s.passed
-                                ? "bg-primary/10 text-primary border-primary/20"
-                                : "bg-muted/60 text-muted-foreground border-border"
-                            }
-                          >
-                            {s.passed ? "passed" : "failed"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-[220px] truncate font-mono text-xs">
-                          {s.code}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="bg-secondary/50 border border-border">
+                  <TabsTrigger value="result">Результаты</TabsTrigger>
+                  <TabsTrigger value="history">История</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="result" className="mt-4 space-y-3">
+                  {testResults ? (
+                    <div className="space-y-3">
+                      {testResults.details.map((result, idx) => (
+                        <Card
+                          key={idx}
+                          className={`${result.passed ? "border-green-500/30 bg-green-500/5" : "border-red-500/30 bg-red-500/5"}`}
+                        >
+                          <CardContent className="pt-4">
+                            <div className="flex items-start gap-3">
+                              {result.passed ? (
+                                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                              ) : (
+                                <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                              )}
+                              <div className="flex-1 space-y-2">
+                                <div className="font-medium">
+                                  Тест #{idx + 1}{" "}
+                                  {result.description
+                                    ? `- ${result.description}`
+                                    : ""}
+                                </div>
+                                {!result.passed && (
+                                  <>
+                                    <div className="space-y-1">
+                                      <div className="text-xs text-muted-foreground">
+                                        Ожидалось:
+                                      </div>
+                                      <code className="text-xs bg-background p-2 rounded block overflow-x-auto">
+                                        {result.expected}
+                                      </code>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <div className="text-xs text-muted-foreground">
+                                        Получено:
+                                      </div>
+                                      <code className="text-xs bg-background p-2 rounded block overflow-x-auto">
+                                        {result.got}
+                                      </code>
+                                    </div>
+                                    {result.stderr && (
+                                      <div className="space-y-1">
+                                        <div className="text-xs text-red-400">
+                                          Ошибки:
+                                        </div>
+                                        <code className="text-xs bg-background p-2 rounded block overflow-x-auto text-red-400">
+                                          {result.stderr}
+                                        </code>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Нажмите "Запустить тесты" для проверки вашего решения
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="history" className="mt-4">
+                  <ScrollArea className="h-[400px]">
+                    {submissions && submissions.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>
+                              <Clock className="w-4 h-4 inline mr-1" />
+                              Время
+                            </TableHead>
+                            <TableHead>Результат</TableHead>
+                            <TableHead>Действие</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {submissions.map((s) => (
+                            <TableRow key={s.id}>
+                              <TableCell className="text-xs">
+                                {new Date(s.created_at).toLocaleString("ru-RU")}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={s.passed ? "default" : "destructive"}
+                                  className={
+                                    s.passed
+                                      ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                      : ""
+                                  }
+                                >
+                                  {s.passed ? (
+                                    <>
+                                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                                      Пройдено
+                                    </>
+                                  ) : (
+                                    <>
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      {s.piston_result?.score || 0}%
+                                    </>
+                                  )}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setCode(s.code);
+                                  }}
+                                >
+                                  Восстановить
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        История попыток пуста
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
