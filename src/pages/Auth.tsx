@@ -27,19 +27,19 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Login form
-  const [loginEmail, setLoginEmail] = useState("");
+  // Вход: логин + пароль
+  const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // Signup form
+  // Регистрация: фамилия, имя, email, логин, пароль, повтор пароля
+  const [signupLastName, setSignupLastName] = useState("");
+  const [signupFirstName, setSignupFirstName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
+  const [signupUsername, setSignupUsername] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkSession = async () => {
       const {
         data: { session },
@@ -50,10 +50,9 @@ export default function Auth() {
     };
     checkSession();
 
-    // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         navigate("/app");
       }
@@ -67,8 +66,49 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", loginUsername.trim())
+        .maybeSingle();
+
+      if (profileError) {
+        toast({
+          title: "Ошибка",
+          description: profileError.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!profile) {
+        toast({
+          title: "Ошибка входа",
+          description: "Пользователь с таким логином не найден",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: email, error: emailError } = await supabase.rpc(
+        "get_user_email_by_id",
+        { user_id: profile.id },
+      );
+
+      if (emailError || !email) {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось получить данные пользователя",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
+        email: email,
         password: loginPassword,
       });
 
@@ -76,7 +116,7 @@ export default function Auth() {
         if (error.message === "Invalid login credentials") {
           toast({
             title: "Ошибка входа",
-            description: "Неверный email или пароль",
+            description: "Неверный логин или пароль",
             variant: "destructive",
           });
         } else {
@@ -101,6 +141,38 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!signupLastName.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите фамилию",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!signupFirstName.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите имя",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!signupUsername.trim() || signupUsername.length < 3) {
+      toast({
+        title: "Ошибка",
+        description: "Логин должен содержать минимум 3 символа",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(signupUsername)) {
+      toast({
+        title: "Ошибка",
+        description: "Логин может содержать только латинские буквы и цифры",
+        variant: "destructive",
+      });
+      return;
+    }
     if (signupPassword !== signupConfirmPassword) {
       toast({
         title: "Ошибка",
@@ -109,7 +181,6 @@ export default function Auth() {
       });
       return;
     }
-
     if (signupPassword.length < 6) {
       toast({
         title: "Ошибка",
@@ -122,16 +193,31 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", signupUsername)
+        .maybeSingle();
 
-      const { error } = await supabase.auth.signUp({
+      if (existingUser) {
+        toast({
+          title: "Ошибка регистрации",
+          description: "Этот логин уже занят",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
-            first_name: firstName,
-            last_name: lastName,
+            first_name: signupFirstName,
+            last_name: signupLastName,
+            username: signupUsername,
           },
         },
       });
@@ -150,12 +236,62 @@ export default function Auth() {
             variant: "destructive",
           });
         }
-      } else {
+        setIsLoading(false);
+        return;
+      }
+
+      if (signUpData.user) {
+        await new Promise((r) => setTimeout(r, 500));
+
+        const { data: profileResult, error: profileError } = await supabase.rpc(
+          "initialize_user_profile",
+          {
+            p_user_id: signUpData.user.id,
+            p_first_name: signupFirstName,
+            p_last_name: signupLastName,
+            p_username: signupUsername,
+          },
+        );
+
+        if (profileError) {
+          toast({
+            title: "Ошибка создания профиля",
+            description: profileError.message,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (profileResult && !profileResult.success) {
+          await new Promise((r) => setTimeout(r, 1000));
+          const { data: retryResult, error: retryError } = await supabase.rpc(
+            "initialize_user_profile",
+            {
+              p_user_id: signUpData.user.id,
+              p_first_name: signupFirstName,
+              p_last_name: signupLastName,
+              p_username: signupUsername,
+            },
+          );
+
+          if (retryError || (retryResult && !retryResult.success)) {
+            toast({
+              title: "Ошибка создания профиля",
+              description: retryResult?.error ?? "Не удалось создать профиль",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+
         toast({
           title: "Регистрация успешна!",
-          description: "Проверьте email для подтверждения аккаунта",
+          description: "Проверьте email для подтверждения или войдите в аккаунт",
         });
         setActiveTab("login");
+        setLoginUsername(signupUsername);
       }
     } catch (error) {
       toast({
@@ -170,13 +306,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background effects */}
       <div className="absolute inset-0 bg-grid opacity-30" />
       <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
 
       <div className="w-full max-w-md z-10">
-        {/* Back to home */}
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -209,19 +343,19 @@ export default function Auth() {
                 <TabsTrigger value="signup">Регистрация</TabsTrigger>
               </TabsList>
 
-              {/* Login Tab */}
+              {/* Вход: логин + пароль */}
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-username">Логин</Label>
                     <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
+                      id="login-username"
+                      type="text"
+                      placeholder="ivan123"
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
                       required
-                      autoComplete="email"
+                      autoComplete="username"
                       className="border-border focus:border-primary"
                     />
                   </div>
@@ -270,32 +404,33 @@ export default function Auth() {
                 </form>
               </TabsContent>
 
-              {/* Signup Tab */}
+              {/* Регистрация: фамилия, имя, email, логин, пароль, повтор пароля */}
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">Имя</Label>
-                      <Input
-                        id="firstName"
-                        placeholder="Иван"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        autoComplete="given-name"
-                        className="border-border focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Фамилия</Label>
-                      <Input
-                        id="lastName"
-                        placeholder="Иванов"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        autoComplete="family-name"
-                        className="border-border focus:border-primary"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Фамилия</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Иванов"
+                      value={signupLastName}
+                      onChange={(e) => setSignupLastName(e.target.value)}
+                      required
+                      autoComplete="family-name"
+                      className="border-border focus:border-primary"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Имя</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Иван"
+                      value={signupFirstName}
+                      onChange={(e) => setSignupFirstName(e.target.value)}
+                      required
+                      autoComplete="given-name"
+                      className="border-border focus:border-primary"
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -303,13 +438,30 @@ export default function Auth() {
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder="ivan@example.com"
                       value={signupEmail}
                       onChange={(e) => setSignupEmail(e.target.value)}
                       required
                       autoComplete="email"
                       className="border-border focus:border-primary"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-username">Логин</Label>
+                    <Input
+                      id="signup-username"
+                      type="text"
+                      placeholder="ivan123"
+                      value={signupUsername}
+                      onChange={(e) => setSignupUsername(e.target.value)}
+                      required
+                      autoComplete="username"
+                      className="border-border focus:border-primary"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Латинские буквы и цифры, минимум 3 символа
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -340,7 +492,7 @@ export default function Auth() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Подтвердите пароль</Label>
+                    <Label htmlFor="confirm-password">Повтор пароля</Label>
                     <Input
                       id="confirm-password"
                       type="password"

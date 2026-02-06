@@ -109,9 +109,6 @@ export default function Achievements() {
                     </Badge>
                   )}
                 </div>
-                <div className="text-sm">
-                  Статус: {earnedAt ? <span className="text-primary">получено</span> : <span className="text-muted-foreground">не получено</span>}
-                </div>
               </CardContent>
 
               <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all duration-500" />

@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/auth/AuthProvider";
@@ -34,9 +35,12 @@ import {
   FileDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const reportRef = useRef<HTMLDivElement>(null);
 
   // Статистика пользователей
   const { data: usersCount } = useQuery({
@@ -218,9 +222,40 @@ export default function AdminDashboard() {
 
   const COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#ef4444", "#8b5cf6"];
 
-  const handleExportPDF = () => {
-    // Здесь можно добавить библиотеку для экспорта в PDF (например, jsPDF)
-    alert("Функция экспорта в PDF будет реализована с использованием jsPDF");
+  const handleExportPDF = async () => {
+    const el = reportRef.current;
+    if (!el) return;
+    try {
+      const canvas = await html2canvas(el, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const contentW = pageW - 2 * margin;
+      const contentH = pageH - 2 * margin;
+      const ratio = canvas.width / canvas.height;
+      let w = contentW;
+      let h = contentW / ratio;
+      if (h > contentH) {
+        h = contentH;
+        w = contentH * ratio;
+      }
+      pdf.addImage(imgData, "PNG", margin, margin, w, h);
+      pdf.save(`imperion-admin-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert("Не удалось сформировать PDF. Убедитесь, что данные загружены.");
+    }
   };
 
   return (
@@ -527,6 +562,88 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Скрытый блок для экспорта в PDF: белый фон, чёрный текст, минимальные отступы A4 */}
+      <div
+        ref={reportRef}
+        aria-hidden
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          width: "210mm",
+          maxWidth: "794px",
+          padding: "8mm",
+          backgroundColor: "#ffffff",
+          color: "#000000",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "12px",
+          boxSizing: "border-box",
+        }}
+      >
+        <h1 style={{ margin: "0 0 4px 0", fontSize: "18px", fontWeight: "bold" }}>
+          Отчёт панели администратора — Imperion
+        </h1>
+        <p style={{ margin: "0 0 12px 0", color: "#000000" }}>
+          {new Date().toLocaleDateString("ru-RU", { dateStyle: "long" })}
+        </p>
+        <section style={{ marginBottom: "12px" }}>
+          <h2 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: "bold" }}>
+            Основные показатели
+          </h2>
+          <table style={{ width: "100%", borderCollapse: "collapse", color: "#000000" }}>
+            <tbody>
+              <tr><td style={{ padding: "2px 8px 2px 0" }}>Пользователи:</td><td style={{ fontWeight: "bold" }}>{usersCount ?? 0}</td></tr>
+              <tr><td style={{ padding: "2px 8px 2px 0" }}>Уроки:</td><td style={{ fontWeight: "bold" }}>{lessonsCount ?? 0}</td></tr>
+              <tr><td style={{ padding: "2px 8px 2px 0" }}>Лекции:</td><td style={{ fontWeight: "bold" }}>{lecturesCount ?? 0}</td></tr>
+              <tr><td style={{ padding: "2px 8px 2px 0" }}>Достижения:</td><td style={{ fontWeight: "bold" }}>{achievementsCount ?? 0}</td></tr>
+            </tbody>
+          </table>
+        </section>
+        <section style={{ marginBottom: "12px" }}>
+          <h2 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: "bold" }}>
+            Топ 10 по XP
+          </h2>
+          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #000", color: "#000000" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f0f0f0" }}>
+                <th style={{ border: "1px solid #000", padding: "4px 6px", textAlign: "left" }}>#</th>
+                <th style={{ border: "1px solid #000", padding: "4px 6px", textAlign: "left" }}>Имя</th>
+                <th style={{ border: "1px solid #000", padding: "4px 6px", textAlign: "left" }}>Уровень</th>
+                <th style={{ border: "1px solid #000", padding: "4px 6px", textAlign: "right" }}>XP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(topUsers ?? []).map((u, i) => (
+                <tr key={i}>
+                  <td style={{ border: "1px solid #000", padding: "4px 6px" }}>{i + 1}</td>
+                  <td style={{ border: "1px solid #000", padding: "4px 6px" }}>{u.name}</td>
+                  <td style={{ border: "1px solid #000", padding: "4px 6px" }}>{u.level}</td>
+                  <td style={{ border: "1px solid #000", padding: "4px 6px", textAlign: "right" }}>{u.xp}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+        <section style={{ marginBottom: "12px" }}>
+          <h2 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: "bold" }}>Роли</h2>
+          <p style={{ margin: 0, color: "#000000" }}>
+            {(usersByRole ?? []).map((r) => `${r.name}: ${r.value}`).join("; ") || "—"}
+          </p>
+        </section>
+        <section style={{ marginBottom: "12px" }}>
+          <h2 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: "bold" }}>Уроки по языкам</h2>
+          <p style={{ margin: 0, color: "#000000" }}>
+            {(lessonsByLanguage ?? []).map((l) => `${l.name}: ${l.value}`).join("; ") || "—"}
+          </p>
+        </section>
+        <section>
+          <h2 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: "bold" }}>Сложность</h2>
+          <p style={{ margin: 0, color: "#000000" }}>
+            {(lessonsByDifficulty ?? []).map((d) => `${d.name}: ${d.value}`).join("; ") || "—"}
+          </p>
+        </section>
       </div>
     </div>
   );

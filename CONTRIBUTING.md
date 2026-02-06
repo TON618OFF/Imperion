@@ -47,7 +47,7 @@ npm run dev
 ```
 Imperion/
 ├── src/
-│   ├── auth/              # Логика аутентификации
+│   ├── auth/              # Логика аутентификации (AuthProvider)
 │   ├── components/        # React компоненты
 │   │   ├── ui/           # UI компоненты (shadcn/ui)
 │   │   └── landing/      # Компоненты лендинга
@@ -56,13 +56,13 @@ Imperion/
 │   ├── pages/            # Страницы приложения
 │   │   ├── admin/       # Панель администратора
 │   │   ├── app/         # Основное приложение
-│   │   ├── auth/        # Страницы авторизации
-│   │   └── mentor/      # Панель ментора
+│   │   ├── mentor/      # Панель ментора
+│   │   ├── Auth.tsx     # Страница авторизации
+│   │   └── Index.tsx    # Лендинг
 │   ├── App.tsx           # Главный компонент приложения
 │   └── main.tsx          # Точка входа
 ├── supabase/
-│   ├── schema.sql        # Схема базы данных
-│   └── seed.sql          # Начальные данные
+│   └── database_complete.sql  # Полная схема БД с данными
 └── public/               # Статические файлы
 ```
 
@@ -219,18 +219,18 @@ describe('MyComponent', () => {
 
 ### Добавление нового языка программирования
 
-1. Обновите enum в `schema.sql`:
+1. Обновите enum в `database_complete.sql`:
 ```sql
 create type public.programming_language as enum ('python','javascript','cpp','c','go','новый_язык');
 ```
 
-2. Добавьте уроки и лекции в `seed.sql`
+2. Добавьте уроки и лекции в соответствующие секции `database_complete.sql`
 
 3. Обновите компоненты для поддержки нового языка
 
 ### Добавление новой роли
 
-1. Обновите enum в `schema.sql`:
+1. Обновите enum в `database_complete.sql`:
 ```sql
 create type public.user_role as enum ('пользователь','ментор','администратор','новая_роль');
 ```
@@ -243,7 +243,7 @@ create type public.user_role as enum ('пользователь','ментор',
 
 ### Добавление нового статуса прогресса
 
-1. Обновите enum в `schema.sql`:
+1. Обновите enum в `database_complete.sql`:
 ```sql
 create type public.progress_status as enum ('не_начат','в_процессе','завершён','новый_статус');
 ```
@@ -256,12 +256,12 @@ create type public.progress_status as enum ('не_начат','в_процесс
 
 ### Изменение схемы
 
-1. Внесите изменения в `supabase/schema.sql`
+1. Внесите изменения в `supabase/database_complete.sql`
 2. Протестируйте изменения локально
 3. Создайте миграцию:
 ```sql
 -- Добавьте комментарий с датой и описанием
--- Migration: 2024-01-15 - Добавление нового поля
+-- Migration: 2026-02-06 - Добавление нового поля
 ALTER TABLE public.lessons ADD COLUMN new_field TEXT;
 ```
 
@@ -350,3 +350,7 @@ create policy "Users can read own data"
 3. Создайте issue в GitHub
 
 Спасибо за ваш вклад в Imperion! 🚀
+
+---
+
+**Версия:** v0.5.0 | Февраль 2026

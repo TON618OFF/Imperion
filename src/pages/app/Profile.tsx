@@ -12,16 +12,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   Award,
   BookOpen,
+  Code2,
+  Eye,
+  EyeOff,
   Flame,
   GraduationCap,
+  KeyRound,
   Shield,
   User as UserIcon,
 } from "lucide-react";
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  python: "Python",
+  javascript: "JavaScript",
+  cpp: "C++",
+  c: "C",
+  go: "Go",
+};
 
 type ProfileRow = {
   id: string;
@@ -38,6 +51,10 @@ export default function Profile() {
   const qc = useQueryClient();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile", user?.id],
@@ -122,6 +139,66 @@ export default function Profile() {
     },
   });
 
+  const { data: languageStats } = useQuery({
+    queryKey: ["v_user_language_stats", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("v_user_language_stats")
+        .select("language, lessons_completed, submissions_count, total_xp")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []) as {
+        language: string;
+        lessons_completed: number;
+        submissions_count: number;
+        total_xp: number;
+      }[];
+    },
+  });
+
+  const { data: totalsByLanguage } = useQuery({
+    queryKey: ["totals_by_language"],
+    queryFn: async () => {
+      const [lessonsRes, lecturesRes] = await Promise.all([
+        supabase.from("lessons").select("language").eq("published", true),
+        supabase.from("lectures").select("language").eq("published", true),
+      ]);
+      if (lessonsRes.error) throw lessonsRes.error;
+      if (lecturesRes.error) throw lecturesRes.error;
+      const lessonTotals: Record<string, number> = {};
+      (lessonsRes.data ?? []).forEach((r: { language: string }) => {
+        lessonTotals[r.language] = (lessonTotals[r.language] ?? 0) + 1;
+      });
+      const lectureTotals: Record<string, number> = {};
+      (lecturesRes.data ?? []).forEach((r: { language: string }) => {
+        lectureTotals[r.language] = (lectureTotals[r.language] ?? 0) + 1;
+      });
+      return { lessonTotals, lectureTotals };
+    },
+  });
+
+  const { data: lecturesCompletedByLanguage } = useQuery({
+    queryKey: ["user_lectures_by_language", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_lecture_progress")
+        .select("lecture_id, lectures(language)")
+        .eq("user_id", user!.id)
+        .eq("completed", true);
+      if (error) throw error;
+      const byLang: Record<string, number> = {};
+      (data ?? []).forEach((r: { lectures: { language: string } | null }) => {
+        const lang = r.lectures?.language;
+        if (lang) {
+          byLang[lang] = (byLang[lang] ?? 0) + 1;
+        }
+      });
+      return byLang;
+    },
+  });
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
@@ -184,6 +261,62 @@ export default function Profile() {
       });
     },
   });
+
+  const passwordChangeMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.email) throw new Error("Email не найден");
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (signInError) throw new Error("Неверный текущий пароль");
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast({ title: "Пароль успешно изменён" });
+    },
+    onError: (e: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Ошибка смены пароля",
+        description: e?.message ?? String(e),
+      });
+    },
+  });
+
+  const handlePasswordChange = () => {
+    if (newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Новый пароль должен быть не менее 6 символов",
+      });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Пароли не совпадают",
+      });
+      return;
+    }
+    if (!currentPassword.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Введите текущий пароль",
+      });
+      return;
+    }
+    passwordChangeMutation.mutate();
+  };
 
   if (isLoading)
     return <div className="text-muted-foreground">Загрузка профиля…</div>;
@@ -317,7 +450,7 @@ export default function Profile() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Award className="h-4 w-4 text-amber-200" />
               Достижения
@@ -332,7 +465,7 @@ export default function Profile() {
         </Card>
 
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-amber-200" />
               Уроки
@@ -347,7 +480,7 @@ export default function Profile() {
         </Card>
 
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <GraduationCap className="h-4 w-4 text-amber-200" />
               Лекции
@@ -362,7 +495,7 @@ export default function Profile() {
         </Card>
 
         <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Flame className="h-4 w-4 text-amber-200" />
               Серия
@@ -380,67 +513,350 @@ export default function Profile() {
         </Card>
       </div>
 
+      {/* Статистика по языкам */}
+      <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl overflow-hidden">
+        <CardHeader className="border-b border-border/50 bg-muted/20">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Code2 className="h-5 w-5 text-amber-200" />
+            Статистика по языкам
+          </CardTitle>
+          <CardDescription className="mt-1">
+            Уроки, лекции, отправки кода и XP по каждому языку программирования.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          {!languageStats?.length && !lecturesCompletedByLanguage && (
+            <p className="text-sm text-muted-foreground py-2">
+              Пока нет активности по языкам. Начните уроки или лекции, чтобы здесь появилась статистика.
+            </p>
+          )}
+          {(languageStats?.length ?? 0) > 0 ||
+          (lecturesCompletedByLanguage && Object.keys(lecturesCompletedByLanguage).length > 0) ? (
+            <div className="space-y-4">
+              {Array.from(
+                new Set([
+                  ...(languageStats?.map((s) => s.language) ?? []),
+                  ...(lecturesCompletedByLanguage ? Object.keys(lecturesCompletedByLanguage) : []),
+                ])
+              )
+                .sort()
+                .map((lang) => {
+                  const stat = languageStats?.find((s) => s.language === lang);
+                  const lessonsTotal = totalsByLanguage?.lessonTotals?.[lang] ?? 0;
+                  const lecturesTotal = totalsByLanguage?.lectureTotals?.[lang] ?? 0;
+                  const lecturesDone = lecturesCompletedByLanguage?.[lang] ?? 0;
+                  const lessonsDone = stat?.lessons_completed ?? 0;
+                  const submissions = stat?.submissions_count ?? 0;
+                  const xp = stat?.total_xp ?? 0;
+                  const hasAny = lessonsDone > 0 || lecturesDone > 0 || submissions > 0;
+                  if (!hasAny && lessonsTotal === 0 && lecturesTotal === 0) return null;
+                  return (
+                    <div
+                      key={lang}
+                      className="rounded-xl border border-border/80 bg-muted/5 p-4 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground">
+                          {LANGUAGE_LABELS[lang] ?? lang}
+                        </span>
+                        {xp > 0 && (
+                          <span className="text-sm text-amber-200/90 font-medium">
+                            {xp} XP
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-3 text-sm">
+                        <div className="rounded-lg border border-border/60 bg-muted/10 px-3 py-2">
+                          <div className="text-muted-foreground mb-1">Уроки</div>
+                          <div className="font-medium tabular-nums text-foreground">
+                            {lessonsDone}
+                            {lessonsTotal > 0 && ` / ${lessonsTotal}`}
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-muted/10 px-3 py-2">
+                          <div className="text-muted-foreground mb-1">Лекции</div>
+                          <div className="font-medium tabular-nums text-foreground">
+                            {lecturesDone}
+                            {lecturesTotal > 0 && ` / ${lecturesTotal}`}
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-muted/10 px-3 py-2">
+                          <div className="text-muted-foreground mb-1">Отправки кода</div>
+                          <div className="font-medium tabular-nums text-foreground">{submissions}</div>
+                        </div>
+                      </div>
+                      {(lessonsTotal > 0 || lecturesTotal > 0) && (
+                        <div className="space-y-1.5">
+                          {lessonsTotal > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-primary/70 transition-all"
+                                  style={{
+                                    width: `${Math.min(100, (lessonsDone / lessonsTotal) * 100)}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground w-12 shrink-0">
+                                {lessonsDone}/{lessonsTotal}
+                              </span>
+                            </div>
+                          )}
+                          {lecturesTotal > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-amber-500/70 transition-all"
+                                  style={{
+                                    width: `${Math.min(100, (lecturesDone / lecturesTotal) * 100)}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground w-12 shrink-0">
+                                {lecturesDone}/{lecturesTotal}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
       {isEditing ? (
-        <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl">
-          <CardHeader>
-            <CardTitle>Редактирование</CardTitle>
-            <CardDescription>Обнови данные и аватар</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-2">
-                <div className="text-sm font-medium">Имя</div>
-                <Input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="text-sm font-medium">Фамилия</div>
-                <Input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Никнейм</div>
-              <Input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">О себе</div>
-              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} />
-            </div>
-
-            <div className="grid gap-2">
-              <div className="text-sm font-medium">Новый аватар</div>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
-              />
-              {avatarFile ? (
-                <div className="text-xs text-muted-foreground">
-                  Выбран файл: {avatarFile.name}
+        <div className="grid gap-8 lg:grid-cols-[1fr,minmax(320px,400px)]">
+          {/* Личные данные */}
+          <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/50 bg-muted/20">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20">
+                  <UserIcon className="h-4 w-4 text-primary" />
                 </div>
-              ) : null}
-            </div>
+                Личные данные
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Имя, фамилия, логин и описание. Логин используется для входа.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Аватар */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end pb-3">
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 shrink-0 rounded-xl border-2 border-dashed border-border bg-muted/30 flex items-center justify-center overflow-hidden">
+                    {avatarFile ? (
+                      <img
+                        src={URL.createObjectURL(avatarFile)}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : profile.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <UserIcon className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-avatar" className="text-sm font-medium">
+                      Фото профиля
+                    </Label>
+                    <div className="flex items-center w-full min-w-[240px] max-w-[320px] rounded-md border border-border bg-background px-3 py-2 min-h-[2.5rem] focus-within:ring-2 focus-within:ring-primary/30 focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:outline-none">
+                      <Input
+                        id="profile-avatar"
+                        type="file"
+                        accept="image/*"
+                        className="h-auto min-h-0 w-full max-w-full border-0 bg-transparent p-0 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary/20 file:px-3 file:py-2 file:text-xs file:font-medium file:min-h-[1.75rem] focus-visible:outline-none focus-visible:ring-0"
+                        onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+                      />
+                    </div>
+                    {avatarFile && (
+                      <p className="text-xs text-muted-foreground truncate max-w-[320px]">
+                        {avatarFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
-              >
-                Сохранить
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="h-px bg-border/50" />
+
+              {/* Имя и фамилия */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="profile-firstName" className="text-sm font-medium">
+                    Имя
+                  </Label>
+                  <Input
+                    id="profile-firstName"
+                    placeholder="Иван"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="h-10 border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-lastName" className="text-sm font-medium">
+                    Фамилия
+                  </Label>
+                  <Input
+                    id="profile-lastName"
+                    placeholder="Иванов"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="h-10 border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              {/* Логин */}
+              <div className="space-y-2">
+                <Label htmlFor="profile-username" className="text-sm font-medium">
+                  Логин
+                </Label>
+                <Input
+                  id="profile-username"
+                  placeholder="ivan123"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="h-10 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Только латинские буквы и цифры, 3–50 символов. Нужен для входа в аккаунт.
+                </p>
+              </div>
+
+              {/* О себе */}
+              <div className="space-y-2">
+                <Label htmlFor="profile-bio" className="text-sm font-medium">
+                  О себе
+                </Label>
+                <Textarea
+                  id="profile-bio"
+                  placeholder="Кратко расскажите о себе (по желанию)"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={4}
+                  className="min-h-[100px] resize-y border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button
+                  variant="imperial"
+                  size="default"
+                  onClick={() => saveMutation.mutate()}
+                  disabled={saveMutation.isPending}
+                >
+                  {saveMutation.isPending ? "Сохранение…" : "Сохранить"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={() => {
+                    setFirstName(profile.first_name ?? "");
+                    setLastName(profile.last_name ?? "");
+                    setUsername(profile.username ?? "");
+                    setBio(profile.bio ?? "");
+                    setAvatarFile(null);
+                  }}
+                >
+                  Отмена
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Смена пароля */}
+          <Card className="bg-card/60 backdrop-blur border border-border rounded-2xl overflow-hidden h-fit">
+            <CardHeader className="border-b border-border/50 bg-muted/20">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/20">
+                  <KeyRound className="h-4 w-4 text-amber-200" />
+                </div>
+                Смена пароля
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Введите текущий пароль и задайте новый. После смены войдите с новым паролем.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="rounded-xl border border-border/80 bg-muted/10 p-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password" className="text-sm font-medium">
+                    Текущий пароль
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="current-password"
+                      type={showPasswords ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      autoComplete="current-password"
+                      className="h-10 border-border bg-background/50 pr-10 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords((v) => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      aria-label={showPasswords ? "Скрыть пароль" : "Показать пароль"}
+                    >
+                      {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password" className="text-sm font-medium">
+                    Новый пароль
+                  </Label>
+                  <Input
+                    id="new-password"
+                    type={showPasswords ? "text" : "password"}
+                    placeholder="Минимум 6 символов"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                    className="h-10 border-border bg-background/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-sm font-medium">
+                    Повторите новый пароль
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    type={showPasswords ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    className="h-10 border-border bg-background/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <Button
+                  className="w-full mt-2"
+                  variant="outline"
+                  onClick={handlePasswordChange}
+                  disabled={
+                    passwordChangeMutation.isPending ||
+                    !currentPassword ||
+                    !newPassword ||
+                    !confirmPassword
+                  }
+                >
+                  {passwordChangeMutation.isPending ? "Смена…" : "Изменить пароль"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
     </div>
   );

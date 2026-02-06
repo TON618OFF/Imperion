@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/auth/AuthProvider";
@@ -39,6 +39,9 @@ import {
   Trash2,
   Save,
   FileText,
+  Search,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
@@ -116,6 +119,16 @@ export default function MentorDashboard() {
     useState<Lesson | null>(null);
   const [editingLectureForSections, setEditingLectureForSections] =
     useState<Lecture | null>(null);
+
+  // Поиск и сортировка уроков
+  const [lessonSearch, setLessonSearch] = useState("");
+  const [lessonSortBy, setLessonSortBy] = useState<keyof Lesson>("order_index");
+  const [lessonSortAsc, setLessonSortAsc] = useState(true);
+
+  // Поиск и сортировка лекций
+  const [lectureSearch, setLectureSearch] = useState("");
+  const [lectureSortBy, setLectureSortBy] = useState<keyof Lecture>("order_index");
+  const [lectureSortAsc, setLectureSortAsc] = useState(true);
 
   // Форма для урока
   const [lessonForm, setLessonForm] = useState({
@@ -212,6 +225,72 @@ export default function MentorDashboard() {
       return data as Lecture[];
     },
   });
+
+  // Уроки: фильтр по поиску и сортировка
+  const lessonsFilteredAndSorted = useMemo(() => {
+    if (!lessons) return [];
+    const q = lessonSearch.trim().toLowerCase();
+    let list = q
+      ? lessons.filter(
+          (l) =>
+            (l.title || "").toLowerCase().includes(q) ||
+            (l.slug || "").toLowerCase().includes(q) ||
+            (l.description || "").toLowerCase().includes(q) ||
+            (l.language || "").toLowerCase().includes(q) ||
+            (l.difficulty || "").toLowerCase().includes(q) ||
+            (l.type || "").toLowerCase().includes(q)
+        )
+      : [...lessons];
+    const key = lessonSortBy;
+    const asc = lessonSortAsc;
+    list.sort((a, b) => {
+      const va = a[key];
+      const vb = b[key];
+      if (va == null && vb == null) return 0;
+      if (va == null) return asc ? 1 : -1;
+      if (vb == null) return asc ? -1 : 1;
+      if (typeof va === "boolean" && typeof vb === "boolean")
+        return asc ? (va === vb ? 0 : va ? 1 : -1) : (va === vb ? 0 : vb ? 1 : -1);
+      if (typeof va === "number" && typeof vb === "number")
+        return asc ? va - vb : vb - va;
+      const sa = String(va).toLowerCase();
+      const sb = String(vb).toLowerCase();
+      return asc ? (sa < sb ? -1 : sa > sb ? 1 : 0) : (sb < sa ? -1 : sb > sa ? 1 : 0);
+    });
+    return list;
+  }, [lessons, lessonSearch, lessonSortBy, lessonSortAsc]);
+
+  // Лекции: фильтр по поиску и сортировка
+  const lecturesFilteredAndSorted = useMemo(() => {
+    if (!lectures) return [];
+    const q = lectureSearch.trim().toLowerCase();
+    let list = q
+      ? lectures.filter(
+          (l) =>
+            (l.title || "").toLowerCase().includes(q) ||
+            (l.slug || "").toLowerCase().includes(q) ||
+            (l.summary || "").toLowerCase().includes(q) ||
+            (l.language || "").toLowerCase().includes(q)
+        )
+      : [...lectures];
+    const key = lectureSortBy;
+    const asc = lectureSortAsc;
+    list.sort((a, b) => {
+      const va = a[key];
+      const vb = b[key];
+      if (va == null && vb == null) return 0;
+      if (va == null) return asc ? 1 : -1;
+      if (vb == null) return asc ? -1 : 1;
+      if (typeof va === "boolean" && typeof vb === "boolean")
+        return asc ? (va === vb ? 0 : va ? 1 : -1) : (va === vb ? 0 : vb ? 1 : -1);
+      if (typeof va === "number" && typeof vb === "number")
+        return asc ? va - vb : vb - va;
+      const sa = String(va).toLowerCase();
+      const sb = String(vb).toLowerCase();
+      return asc ? (sa < sb ? -1 : sa > sb ? 1 : 0) : (sb < sa ? -1 : sb > sa ? 1 : 0);
+    });
+    return list;
+  }, [lectures, lectureSearch, lectureSortBy, lectureSortAsc]);
 
   // Создание/обновление урока
   const lessonMutation = useMutation({
@@ -896,29 +975,117 @@ export default function MentorDashboard() {
                 </DialogContent>
               </Dialog>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск по названию, slug, описанию, языку..."
+                    value={lessonSearch}
+                    onChange={(e) => setLessonSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-muted-foreground">Сортировка:</span>
+                  <Select
+                    value={lessonSortBy}
+                    onValueChange={(v) => setLessonSortBy(v as keyof Lesson)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="title">По названию</SelectItem>
+                      <SelectItem value="slug">По slug</SelectItem>
+                      <SelectItem value="language">По языку</SelectItem>
+                      <SelectItem value="difficulty">По сложности</SelectItem>
+                      <SelectItem value="type">По типу</SelectItem>
+                      <SelectItem value="order_index">По порядку</SelectItem>
+                      <SelectItem value="estimated_minutes">По времени (мин)</SelectItem>
+                      <SelectItem value="published">По статусу</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setLessonSortAsc((a) => !a)}
+                    title={lessonSortAsc ? "По возрастанию" : "По убыванию"}
+                  >
+                    {lessonSortAsc ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
               <ScrollArea className="h-[600px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Название</TableHead>
-                      <TableHead>Язык</TableHead>
-                      <TableHead>Сложность</TableHead>
-                      <TableHead>Тип</TableHead>
-                      <TableHead>Порядок</TableHead>
-                      <TableHead>Статус</TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLessonSortBy("title");
+                          setLessonSortAsc(lessonSortBy === "title" ? !lessonSortAsc : true);
+                        }}
+                      >
+                        Название {lessonSortBy === "title" && (lessonSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLessonSortBy("language");
+                          setLessonSortAsc(lessonSortBy === "language" ? !lessonSortAsc : true);
+                        }}
+                      >
+                        Язык {lessonSortBy === "language" && (lessonSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLessonSortBy("difficulty");
+                          setLessonSortAsc(lessonSortBy === "difficulty" ? !lessonSortAsc : true);
+                        }}
+                      >
+                        Сложность {lessonSortBy === "difficulty" && (lessonSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLessonSortBy("type");
+                          setLessonSortAsc(lessonSortBy === "type" ? !lessonSortAsc : true);
+                        }}
+                      >
+                        Тип {lessonSortBy === "type" && (lessonSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLessonSortBy("order_index");
+                          setLessonSortAsc(lessonSortBy === "order_index" ? !lessonSortAsc : true);
+                        }}
+                      >
+                        Порядок {lessonSortBy === "order_index" && (lessonSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLessonSortBy("published");
+                          setLessonSortAsc(lessonSortBy === "published" ? !lessonSortAsc : true);
+                        }}
+                      >
+                        Статус {lessonSortBy === "published" && (lessonSortAsc ? "↑" : "↓")}
+                      </TableHead>
                       <TableHead>Действия</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {lessonsLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center">
+                        <TableCell colSpan={8} className="text-center">
                           Загрузка...
                         </TableCell>
                       </TableRow>
-                    ) : lessons && lessons.length > 0 ? (
-                      lessons.map((lesson) => (
+                    ) : lessonsFilteredAndSorted.length > 0 ? (
+                      lessonsFilteredAndSorted.map((lesson) => (
                         <TableRow key={lesson.id}>
                           <TableCell className="font-medium">
                             {lesson.title}
@@ -972,8 +1139,10 @@ export default function MentorDashboard() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center">
-                          Нет уроков
+                        <TableCell colSpan={8} className="text-center">
+                          {lessons && lessons.length > 0
+                            ? "Ничего не найдено по запросу"
+                            : "Нет уроков"}
                         </TableCell>
                       </TableRow>
                     )}
@@ -1284,15 +1453,84 @@ export default function MentorDashboard() {
                 </DialogContent>
               </Dialog>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск по названию, slug, описанию, языку..."
+                    value={lectureSearch}
+                    onChange={(e) => setLectureSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-muted-foreground">Сортировка:</span>
+                  <Select
+                    value={lectureSortBy}
+                    onValueChange={(v) => setLectureSortBy(v as keyof Lecture)}
+                  >
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="title">По названию</SelectItem>
+                      <SelectItem value="slug">По slug</SelectItem>
+                      <SelectItem value="language">По языку</SelectItem>
+                      <SelectItem value="order_index">По порядку</SelectItem>
+                      <SelectItem value="published">По статусу</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setLectureSortAsc((a) => !a)}
+                    title={lectureSortAsc ? "По возрастанию" : "По убыванию"}
+                  >
+                    {lectureSortAsc ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
               <ScrollArea className="h-[600px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Название</TableHead>
-                      <TableHead>Язык</TableHead>
-                      <TableHead>Порядок</TableHead>
-                      <TableHead>Статус</TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLectureSortBy("title");
+                          setLectureSortAsc(lectureSortBy === "title" ? !lectureSortAsc : true);
+                        }}
+                      >
+                        Название {lectureSortBy === "title" && (lectureSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLectureSortBy("language");
+                          setLectureSortAsc(lectureSortBy === "language" ? !lectureSortAsc : true);
+                        }}
+                      >
+                        Язык {lectureSortBy === "language" && (lectureSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLectureSortBy("order_index");
+                          setLectureSortAsc(lectureSortBy === "order_index" ? !lectureSortAsc : true);
+                        }}
+                      >
+                        Порядок {lectureSortBy === "order_index" && (lectureSortAsc ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setLectureSortBy("published");
+                          setLectureSortAsc(lectureSortBy === "published" ? !lectureSortAsc : true);
+                        }}
+                      >
+                        Статус {lectureSortBy === "published" && (lectureSortAsc ? "↑" : "↓")}
+                      </TableHead>
                       <TableHead>Действия</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1303,8 +1541,8 @@ export default function MentorDashboard() {
                           Загрузка...
                         </TableCell>
                       </TableRow>
-                    ) : lectures && lectures.length > 0 ? (
-                      lectures.map((lecture) => (
+                    ) : lecturesFilteredAndSorted.length > 0 ? (
+                      lecturesFilteredAndSorted.map((lecture) => (
                         <TableRow key={lecture.id}>
                           <TableCell className="font-medium">
                             {lecture.title}
@@ -1357,7 +1595,9 @@ export default function MentorDashboard() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center">
-                          Нет лекций
+                          {lectures && lectures.length > 0
+                            ? "Ничего не найдено по запросу"
+                            : "Нет лекций"}
                         </TableCell>
                       </TableRow>
                     )}

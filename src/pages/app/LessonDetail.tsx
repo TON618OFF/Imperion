@@ -434,9 +434,36 @@ export default function LessonDetail() {
             <CardDescription>Внимательно прочитайте требования</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-invert max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {item?.content_markdown ?? ""}
+            <div className="prose prose-invert max-w-none [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code: ({ node, className, children, ...props }) => {
+                    const isBlock = Boolean(className?.toString().startsWith("language-"));
+                    if (isBlock) {
+                      return (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    }
+                    return (
+                      <code
+                        className="bg-yellow-500/35 text-yellow-200 font-mono text-[0.9em]"
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {(() => {
+                  const raw = item?.content_markdown ?? "";
+                  // Двойные тильды ~~...~~ трактуем как инлайн-код (в GFM ~~ — зачёркивание)
+                  const withCodeTildes = raw.replace(/~~([^~]+)~~/g, "`$1`");
+                  return withCodeTildes;
+                })()}
               </ReactMarkdown>
             </div>
 

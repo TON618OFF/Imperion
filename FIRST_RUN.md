@@ -50,7 +50,7 @@ npm run lint
 2. Войдите в аккаунт или зарегистрируйтесь
 3. Нажмите **"New Project"**
 4. Заполните форму:
-   - **Name**: `imperion-pro`
+   - **Name**: `imperion`
    - **Database Password**: придумайте надёжный пароль (сохраните его!)
    - **Region**: выберите ближайший к вам
    - **Pricing Plan**: `Free` (для разработки)
@@ -87,20 +87,20 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 🎨 Шаг 3: Настройка базы данных (5 минут)
+## 🎨 Шаг 3: Настройка базы данных (3 минуты)
 
 ### 3.1 Откройте SQL Editor в Supabase
 
 1. В панели Supabase перейдите в **SQL Editor** (иконка 📝)
 2. Нажмите **"New query"**
 
-### 3.2 Примените схему базы данных
+### 3.2 Выполните скрипт базы данных
 
-1. Откройте файл `supabase/schema.sql` в вашем редакторе
+1. Откройте файл `supabase/database_complete.sql` в вашем редакторе
 2. Скопируйте **ВСЁ** содержимое файла (Ctrl+A, Ctrl+C)
 3. Вставьте в SQL Editor Supabase (Ctrl+V)
 4. Нажмите **"Run"** (или нажмите Ctrl+Enter)
-5. ⏱️ Подождите 10-15 секунд
+5. ⏱️ Подождите 10-30 секунд
 
 ✅ В правом нижнем углу должно появиться сообщение **"Success. No rows returned"**
 
@@ -109,18 +109,13 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - Убедитесь, что проект Supabase полностью загрузился
 - Попробуйте ещё раз
 
-### 3.3 Загрузите начальные данные
+**Этот файл содержит всё необходимое:**
+- Схему базы данных (таблицы, индексы)
+- Функции и триггеры
+- RLS-политики безопасности
+- Начальные данные (уроки, лекции, достижения)
 
-1. Нажмите **"New query"** для нового запроса
-2. Откройте файл `supabase/seed.sql`
-3. Скопируйте **ВСЁ** содержимое
-4. Вставьте в новый SQL Editor
-5. Нажмите **"Run"**
-6. ⏱️ Подождите 5-10 секунд
-
-✅ Должно появиться **"Success. No rows returned"**
-
-### 3.4 Проверка данных
+### 3.3 Проверка данных
 
 Выполните в SQL Editor:
 
@@ -136,9 +131,9 @@ SELECT COUNT(*) as total_achievements FROM public.achievements;
 ```
 
 ✅ Результаты должны быть:
-- `total_lessons`: 15
-- `total_lectures`: 5
-- `total_achievements`: 10
+- `total_lessons`: 45
+- `total_lectures`: 14
+- `total_achievements`: 15
 
 ---
 
@@ -154,13 +149,13 @@ npm run dev
 ```
 VITE v7.x.x  ready in xxx ms
 
-  ➜  Local:   http://localhost:5173/
+  ➜  Local:   http://localhost:8080/
   ➜  Network: use --host to expose
 ```
 
 ### 4.2 Откройте в браузере
 
-Откройте [http://localhost:5173](http://localhost:5173)
+Откройте [http://localhost:8080](http://localhost:8080)
 
 ✅ Должна загрузиться главная страница Imperion
 
@@ -317,7 +312,7 @@ WHERE id = '12345678-1234-1234-1234-123456789abc';
 **Решение:** Скопируйте anon key заново из Supabase
 
 ### Уроки не отображаются
-**Решение:** Проверьте, что выполнили `seed.sql`
+**Решение:** Проверьте, что выполнили `database_complete.sql`
 
 ### "Permission denied" при создании урока
 **Решение:** Назначьте роль "ментор" или "администратор"
@@ -337,10 +332,14 @@ WHERE id = '12345678-1234-1234-1234-123456789abc';
 
 - **Быстрый старт:** `QUICKSTART.md`
 - **Настройка БД:** `DATABASE_SETUP.md`
+- **Руководство ментора:** `MENTOR_GUIDE.md`
 - **Для разработчиков:** `CONTRIBUTING.md`
-- **Список изменений:** `CHANGELOG.md`
 - **Общая информация:** `README.md`
 
 ---
 
 **Удачи в изучении программирования с Imperion! 🚀**
+
+---
+
+**Версия документации:** v0.5.0 | Февраль 2026

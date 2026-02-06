@@ -4,7 +4,14 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
-import { Shield, ArrowLeft, GraduationCap } from "lucide-react";
+import { Shield, GraduationCap, Menu } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function AdminLayout() {
   const { signOut, user } = useAuth();
@@ -47,7 +54,7 @@ export default function AdminLayout() {
 
       <header className="relative z-10 border-b border-primary/10 bg-background/60 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <Link
               to="/app"
               className="font-bold text-foreground flex items-center gap-2"
@@ -61,38 +68,69 @@ export default function AdminLayout() {
                 Панель администратора
               </span>
             </div>
+          </div>
 
-            <nav className="hidden md:flex items-center gap-4 text-sm">
-              <NavLink
-                to="/admin"
-                className="text-muted-foreground hover:text-foreground"
-                activeClassName="text-primary"
+          {/* Компактный header: весь функционал в бургер-меню */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="border-primary/40"
               >
-                Статистика
-              </NavLink>
-            </nav>
-          </div>
+                <Menu className="w-5 h-5" />
+                <span className="sr-only">Открыть меню</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col gap-4 bg-background/95">
+              <SheetHeader className="pb-2 border-b border-border/60">
+                <SheetTitle className="flex items-center justify-between gap-3">
+                  <span className="text-gradient-gold font-semibold">
+                    Imperion — админ
+                  </span>
+                  {user && (
+                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">
+                      {user.email}
+                    </span>
+                  )}
+                </SheetTitle>
+              </SheetHeader>
 
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/mentor" className="flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" />
-                <span className="hidden lg:inline">Панель ментора</span>
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/app">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">В приложение</span>
-              </Link>
-            </Button>
-            <div className="hidden sm:block text-sm text-muted-foreground">
-              {user?.email}
-            </div>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              Выйти
-            </Button>
-          </div>
+              <nav className="mt-2 space-y-2 text-sm">
+                <NavLink
+                  to="/admin"
+                  className="block rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  activeClassName="bg-muted text-primary"
+                >
+                  Статистика админа
+                </NavLink>
+                <NavLink
+                  to="/mentor"
+                  className="block rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  activeClassName="bg-muted text-primary"
+                >
+                  Панель ментора
+                </NavLink>
+                <NavLink
+                  to="/app"
+                  className="block rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  activeClassName="bg-muted text-primary"
+                >
+                  В приложение
+                </NavLink>
+              </nav>
+
+              <div className="mt-auto pt-2 border-t border-border/60">
+                <Button
+                  variant="outline"
+                  className="w-full justify-center"
+                  onClick={handleSignOut}
+                >
+                  Выйти
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
