@@ -28,9 +28,12 @@ npm install
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
+VITE_PISTON_API_KEY=optional-local-dev-key
 ```
 
 > 📖 **Где взять ключи?** Создайте проект на [supabase.com](https://supabase.com) и скопируйте URL и anon key из Settings → API
+>
+> `VITE_PISTON_API_KEY` опционален и нужен только для локальной разработки. В production на Vercel используйте `PISTON_API_KEY`.
 
 ## 🗄️ База данных (2 минуты)
 

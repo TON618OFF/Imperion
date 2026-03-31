@@ -72,7 +72,9 @@ npm run lint
 ```env
 VITE_SUPABASE_URL=вставьте_сюда_project_url
 VITE_SUPABASE_ANON_KEY=вставьте_сюда_anon_key
+VITE_PISTON_API_KEY=ваш_ключ_piston_если_есть
 ```
+(Ключ Piston нужен для запуска кода в уроках; без него публичный API может не принимать запросы.)
 
 ⚠️ **ВАЖНО:**
 - Замените текст после `=` на ваши реальные значения
@@ -83,7 +85,9 @@ VITE_SUPABASE_ANON_KEY=вставьте_сюда_anon_key
 ```env
 VITE_SUPABASE_URL=https://abcdefgh.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_PISTON_API_KEY=ваш_ключ_из_dm_разработчика_piston
 ```
+(Значение `VITE_PISTON_API_KEY` — ключ, выданный для whitelist доступа к Piston API.)
 
 ---
 

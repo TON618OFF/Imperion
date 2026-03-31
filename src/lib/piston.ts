@@ -14,7 +14,8 @@ export type PistonExecuteResult = {
   signal?: string;
 };
 
-const PISTON_URL = "https://emkc.org/api/v2/piston/execute";
+const PISTON_PROXY_URL = "/api/piston-execute";
+const PISTON_DIRECT_URL = "https://emkc.org/api/v2/piston/execute";
 
 function mapLanguage(language: PistonLanguage): string {
   switch (language) {
@@ -54,11 +55,19 @@ export async function pistonExecute(req: PistonExecuteRequest): Promise<PistonEx
     stdin: req.stdin ?? "",
   };
 
-  const res = await fetch(PISTON_URL, {
+  const endpoint = import.meta.env.DEV ? PISTON_DIRECT_URL : PISTON_PROXY_URL;
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+  };
+
+  // Local dev fallback: optional direct key from .env.local.
+  if (import.meta.env.DEV && import.meta.env.VITE_PISTON_API_KEY) {
+    headers.Authorization = import.meta.env.VITE_PISTON_API_KEY;
+  }
+
+  const res = await fetch(endpoint, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
+    headers,
     body: JSON.stringify(body),
   });
 

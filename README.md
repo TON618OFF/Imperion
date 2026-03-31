@@ -9,6 +9,7 @@
 - **[🗄️ Настройка БД](DATABASE_SETUP.md)** — подробная настройка Supabase
 - **[👨‍🏫 Руководство ментора](MENTOR_GUIDE.md)** — создание уроков и лекций
 - **[👨‍💻 Для разработчиков](CONTRIBUTING.md)** — стандарты кодирования и Git workflow
+- **[▲ Деплой на Vercel](VERCEL_DEPLOY.md)** — production-развёртывание
 
 ## О проекте
 
@@ -139,7 +140,11 @@ Imperion/
 ```
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_PISTON_API_KEY=optional_local_dev_key
 ```
+
+`VITE_PISTON_API_KEY` нужен только для локальной разработки (опционально).  
+Для production на Vercel используйте серверную переменную `PISTON_API_KEY`.
 
 ## Возможности
 
