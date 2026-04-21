@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/auth/AuthProvider";
@@ -42,6 +42,7 @@ import {
   Search,
   ArrowUp,
   ArrowDown,
+  GripVertical,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
@@ -103,6 +104,16 @@ type LessonHint = {
   hint_markdown: string;
   penalty_xp: number;
 };
+
+const DRAFT_LESSON_ID = "__draft_lesson__";
+const DRAFT_LECTURE_ID = "__draft_lecture__";
+
+function moveArrayItem<T>(arr: T[], fromIndex: number, toIndex: number): T[] {
+  const next = [...arr];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
+}
 
 export default function MentorDashboard() {
   const { user } = useAuth();
@@ -168,6 +179,13 @@ export default function MentorDashboard() {
       content_markdown: string;
     }[]
   >([]);
+  const [lessonOrderIds, setLessonOrderIds] = useState<string[]>([]);
+  const [lectureOrderIds, setLectureOrderIds] = useState<string[]>([]);
+  const [draggingLessonId, setDraggingLessonId] = useState<string | null>(null);
+  const [draggingLectureId, setDraggingLectureId] = useState<string | null>(null);
+  const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(
+    null,
+  );
 
   // Загрузка уроков
   const { data: lessons, isLoading: lessonsLoading } = useQuery({
@@ -295,7 +313,40 @@ export default function MentorDashboard() {
   // Создание/обновление урока
   const lessonMutation = useMutation({
     mutationFn: async (lesson: typeof lessonForm & { id?: string }) => {
-      if (lesson.id) {
+      if (!lessons) throw new Error("Список уроков ещё не загружен");
+
+      const selectedLanguageLessons = lessons
+        .filter(
+          (item) => item.language === lesson.language && (!lesson.id || item.id !== lesson.id),
+        )
+        .sort((a, b) => a.order_index - b.order_index);
+
+      const currentIndex = lessonOrderIds.findIndex((id) =>
+        lesson.id ? id === lesson.id : id === DRAFT_LESSON_ID,
+      );
+      const targetIndex =
+        currentIndex === -1 ? selectedLanguageLessons.length : currentIndex;
+
+      let newLessonId = lesson.id;
+      if (!lesson.id) {
+        const { data, error } = await supabase
+          .from("lessons")
+          .insert({
+            slug: lesson.slug,
+            title: lesson.title,
+            description: lesson.description || null,
+            type: lesson.type,
+            difficulty: lesson.difficulty,
+            language: lesson.language,
+            order_index: targetIndex + 1,
+            estimated_minutes: lesson.estimated_minutes || null,
+            published: lesson.published,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        newLessonId = data.id as string;
+      } else {
         const { error } = await supabase
           .from("lessons")
           .update({
@@ -305,25 +356,43 @@ export default function MentorDashboard() {
             type: lesson.type,
             difficulty: lesson.difficulty,
             language: lesson.language,
-            order_index: lesson.order_index,
+            order_index: targetIndex + 1,
             estimated_minutes: lesson.estimated_minutes || null,
             published: lesson.published,
             updated_at: new Date().toISOString(),
           })
           .eq("id", lesson.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("lessons").insert({
-          slug: lesson.slug,
-          title: lesson.title,
-          description: lesson.description || null,
-          type: lesson.type,
-          difficulty: lesson.difficulty,
-          language: lesson.language,
-          order_index: lesson.order_index,
-          estimated_minutes: lesson.estimated_minutes || null,
-          published: lesson.published,
-        });
+
+        if (editingLesson && editingLesson.language !== lesson.language) {
+          const oldLanguageLessons = lessons
+            .filter(
+              (item) => item.language === editingLesson.language && item.id !== lesson.id,
+            )
+            .sort((a, b) => a.order_index - b.order_index);
+          for (let i = 0; i < oldLanguageLessons.length; i += 1) {
+            const old = oldLanguageLessons[i];
+            const { error: oldError } = await supabase
+              .from("lessons")
+              .update({ order_index: i + 1, updated_at: new Date().toISOString() })
+              .eq("id", old.id);
+            if (oldError) throw oldError;
+          }
+        }
+      }
+
+      const orderedIds = lessonOrderIds.filter((id) =>
+        lesson.id ? id !== DRAFT_LESSON_ID : id !== newLessonId,
+      );
+      const finalIds = [...orderedIds];
+      finalIds.splice(targetIndex, 0, newLessonId!);
+
+      for (let i = 0; i < finalIds.length; i += 1) {
+        const lessonId = finalIds[i];
+        const { error } = await supabase
+          .from("lessons")
+          .update({ order_index: i + 1, updated_at: new Date().toISOString() })
+          .eq("id", lessonId);
         if (error) throw error;
       }
     },
@@ -371,7 +440,38 @@ export default function MentorDashboard() {
   // Создание/обновление лекции
   const lectureMutation = useMutation({
     mutationFn: async (lecture: typeof lectureForm & { id?: string }) => {
-      if (lecture.id) {
+      if (!lectures) throw new Error("Список лекций ещё не загружен");
+
+      const selectedLanguageLectures = lectures
+        .filter(
+          (item) =>
+            item.language === lecture.language && (!lecture.id || item.id !== lecture.id),
+        )
+        .sort((a, b) => a.order_index - b.order_index);
+
+      const currentIndex = lectureOrderIds.findIndex((id) =>
+        lecture.id ? id === lecture.id : id === DRAFT_LECTURE_ID,
+      );
+      const targetIndex =
+        currentIndex === -1 ? selectedLanguageLectures.length : currentIndex;
+
+      let newLectureId = lecture.id;
+      if (!lecture.id) {
+        const { data, error } = await supabase
+          .from("lectures")
+          .insert({
+            slug: lecture.slug,
+            language: lecture.language,
+            title: lecture.title,
+            summary: lecture.summary || null,
+            order_index: targetIndex + 1,
+            published: lecture.published,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        newLectureId = data.id as string;
+      } else {
         const { error } = await supabase
           .from("lectures")
           .update({
@@ -379,21 +479,42 @@ export default function MentorDashboard() {
             language: lecture.language,
             title: lecture.title,
             summary: lecture.summary || null,
-            order_index: lecture.order_index,
+            order_index: targetIndex + 1,
             published: lecture.published,
             updated_at: new Date().toISOString(),
           })
           .eq("id", lecture.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("lectures").insert({
-          slug: lecture.slug,
-          language: lecture.language,
-          title: lecture.title,
-          summary: lecture.summary || null,
-          order_index: lecture.order_index,
-          published: lecture.published,
-        });
+
+        if (editingLecture && editingLecture.language !== lecture.language) {
+          const oldLanguageLectures = lectures
+            .filter(
+              (item) => item.language === editingLecture.language && item.id !== lecture.id,
+            )
+            .sort((a, b) => a.order_index - b.order_index);
+          for (let i = 0; i < oldLanguageLectures.length; i += 1) {
+            const old = oldLanguageLectures[i];
+            const { error: oldError } = await supabase
+              .from("lectures")
+              .update({ order_index: i + 1, updated_at: new Date().toISOString() })
+              .eq("id", old.id);
+            if (oldError) throw oldError;
+          }
+        }
+      }
+
+      const orderedIds = lectureOrderIds.filter((id) =>
+        lecture.id ? id !== DRAFT_LECTURE_ID : id !== newLectureId,
+      );
+      const finalIds = [...orderedIds];
+      finalIds.splice(targetIndex, 0, newLectureId!);
+
+      for (let i = 0; i < finalIds.length; i += 1) {
+        const lectureId = finalIds[i];
+        const { error } = await supabase
+          .from("lectures")
+          .update({ order_index: i + 1, updated_at: new Date().toISOString() })
+          .eq("id", lectureId);
         if (error) throw error;
       }
     },
@@ -632,6 +753,38 @@ export default function MentorDashboard() {
     });
     setLectureDialogOpen(true);
   };
+
+  useEffect(() => {
+    if (!lessons) return;
+    const lang = lessonForm.language;
+    const sorted = lessons
+      .filter((l) => l.language === lang && (!editingLesson || l.id !== editingLesson.id))
+      .sort((a, b) => a.order_index - b.order_index)
+      .map((l) => l.id);
+    const currentId = editingLesson?.id ?? DRAFT_LESSON_ID;
+    const next = [...sorted];
+    const fallbackIndex = editingLesson
+      ? Math.min(Math.max((editingLesson.order_index || 1) - 1, 0), next.length)
+      : next.length;
+    if (!next.includes(currentId)) next.splice(fallbackIndex, 0, currentId);
+    setLessonOrderIds(next);
+  }, [lessons, lessonForm.language, editingLesson]);
+
+  useEffect(() => {
+    if (!lectures) return;
+    const lang = lectureForm.language;
+    const sorted = lectures
+      .filter((l) => l.language === lang && (!editingLecture || l.id !== editingLecture.id))
+      .sort((a, b) => a.order_index - b.order_index)
+      .map((l) => l.id);
+    const currentId = editingLecture?.id ?? DRAFT_LECTURE_ID;
+    const next = [...sorted];
+    const fallbackIndex = editingLecture
+      ? Math.min(Math.max((editingLecture.order_index || 1) - 1, 0), next.length)
+      : next.length;
+    if (!next.includes(currentId)) next.splice(fallbackIndex, 0, currentId);
+    setLectureOrderIds(next);
+  }, [lectures, lectureForm.language, editingLecture]);
 
   const handleSaveLesson = () => {
     if (editingLesson) {
@@ -924,18 +1077,42 @@ export default function MentorDashboard() {
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="lesson-order">Порядок</Label>
-                      <Input
-                        id="lesson-order"
-                        type="number"
-                        value={lessonForm.order_index}
-                        onChange={(e) =>
-                          setLessonForm({
-                            ...lessonForm,
-                            order_index: parseInt(e.target.value) || 0,
-                          })
-                        }
-                      />
+                      <Label>Порядок уроков (drag and drop)</Label>
+                      <div className="rounded-md border border-border p-3 space-y-2 bg-background/60">
+                        {lessonOrderIds.map((id) => {
+                          const isCurrent = editingLesson ? id === editingLesson.id : id === DRAFT_LESSON_ID;
+                          const item = lessons?.find((l) => l.id === id);
+                          const text = isCurrent
+                            ? lessonForm.title.trim() || "(текущий урок)"
+                            : item?.title || "(без названия)";
+                          return (
+                            <div
+                              key={id}
+                              draggable
+                              onDragStart={() => setDraggingLessonId(id)}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={() => {
+                                if (!draggingLessonId || draggingLessonId === id) return;
+                                const from = lessonOrderIds.indexOf(draggingLessonId);
+                                const to = lessonOrderIds.indexOf(id);
+                                if (from < 0 || to < 0) return;
+                                setLessonOrderIds(moveArrayItem(lessonOrderIds, from, to));
+                                setDraggingLessonId(null);
+                              }}
+                              onDragEnd={() => setDraggingLessonId(null)}
+                              className={`flex items-center gap-2 rounded border px-3 py-2 cursor-grab ${
+                                isCurrent ? "border-primary/50 bg-primary/10" : "border-border"
+                              }`}
+                            >
+                              <GripVertical className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm flex-1">{text}</span>
+                              <Badge variant="secondary">
+                                {lessonOrderIds.indexOf(id) + 1}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
@@ -1402,18 +1579,42 @@ export default function MentorDashboard() {
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="lecture-order">Порядок</Label>
-                      <Input
-                        id="lecture-order"
-                        type="number"
-                        value={lectureForm.order_index}
-                        onChange={(e) =>
-                          setLectureForm({
-                            ...lectureForm,
-                            order_index: parseInt(e.target.value) || 0,
-                          })
-                        }
-                      />
+                      <Label>Порядок лекций (drag and drop)</Label>
+                      <div className="rounded-md border border-border p-3 space-y-2 bg-background/60">
+                        {lectureOrderIds.map((id) => {
+                          const isCurrent = editingLecture ? id === editingLecture.id : id === DRAFT_LECTURE_ID;
+                          const item = lectures?.find((l) => l.id === id);
+                          const text = isCurrent
+                            ? lectureForm.title.trim() || "(текущая лекция)"
+                            : item?.title || "(без названия)";
+                          return (
+                            <div
+                              key={id}
+                              draggable
+                              onDragStart={() => setDraggingLectureId(id)}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={() => {
+                                if (!draggingLectureId || draggingLectureId === id) return;
+                                const from = lectureOrderIds.indexOf(draggingLectureId);
+                                const to = lectureOrderIds.indexOf(id);
+                                if (from < 0 || to < 0) return;
+                                setLectureOrderIds(moveArrayItem(lectureOrderIds, from, to));
+                                setDraggingLectureId(null);
+                              }}
+                              onDragEnd={() => setDraggingLectureId(null)}
+                              className={`flex items-center gap-2 rounded border px-3 py-2 cursor-grab ${
+                                isCurrent ? "border-primary/50 bg-primary/10" : "border-border"
+                              }`}
+                            >
+                              <GripVertical className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm flex-1">{text}</span>
+                              <Badge variant="secondary">
+                                {lectureOrderIds.indexOf(id) + 1}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
@@ -1645,10 +1846,25 @@ export default function MentorDashboard() {
               {sectionsForm.length > 0 ? (
                 <div className="space-y-6">
                   {sectionsForm.map((section, index) => (
-                    <Card key={index} className="p-4">
+                    <Card
+                      key={index}
+                      className="p-4"
+                      draggable
+                      onDragStart={() => setDraggingSectionIndex(index)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        if (draggingSectionIndex === null || draggingSectionIndex === index) return;
+                        setSectionsForm(moveArrayItem(sectionsForm, draggingSectionIndex, index));
+                        setDraggingSectionIndex(null);
+                      }}
+                      onDragEnd={() => setDraggingSectionIndex(null)}
+                    >
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <Label>Секция {index + 1}</Label>
+                          <Label className="flex items-center gap-2">
+                            <GripVertical className="w-4 h-4 text-muted-foreground" />
+                            Секция {index + 1}
+                          </Label>
                           <Button
                             type="button"
                             variant="ghost"

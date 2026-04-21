@@ -1,0 +1,95 @@
+"filename", "language", "TypeScript", "TypeScript JSX", "CSS", "comment", "blank", "total"
+"c:\Study\VKR\Imperion-Pro\src\App.tsx", "TypeScript JSX", 0, 86, 0, 1, 8, 95
+"c:\Study\VKR\Imperion-Pro\src\auth\AuthProvider.tsx", "TypeScript JSX", 0, 93, 0, 0, 15, 108
+"c:\Study\VKR\Imperion-Pro\src\components\MarkdownEditor.tsx", "TypeScript JSX", 0, 198, 0, 0, 8, 206
+"c:\Study\VKR\Imperion-Pro\src\components\NavLink.tsx", "TypeScript JSX", 0, 24, 0, 0, 5, 29
+"c:\Study\VKR\Imperion-Pro\src\components\ProtectedRoute.tsx", "TypeScript JSX", 0, 17, 0, 0, 5, 22
+"c:\Study\VKR\Imperion-Pro\src\components\RoleProtectedRoute.tsx", "TypeScript JSX", 0, 42, 0, 0, 9, 51
+"c:\Study\VKR\Imperion-Pro\src\components\ScrollToTop.tsx", "TypeScript JSX", 0, 9, 0, 6, 4, 19
+"c:\Study\VKR\Imperion-Pro\src\components\landing\Features.tsx", "TypeScript JSX", 0, 116, 0, 6, 9, 131
+"c:\Study\VKR\Imperion-Pro\src\components\landing\Footer.tsx", "TypeScript JSX", 0, 116, 0, 3, 9, 128
+"c:\Study\VKR\Imperion-Pro\src\components\landing\Header.tsx", "TypeScript JSX", 0, 83, 0, 5, 9, 97
+"c:\Study\VKR\Imperion-Pro\src\components\landing\Hero.tsx", "TypeScript JSX", 0, 113, 0, 8, 11, 132
+"c:\Study\VKR\Imperion-Pro\src\components\landing\LanguageCards.tsx", "TypeScript JSX", 0, 105, 0, 7, 13, 125
+"c:\Study\VKR\Imperion-Pro\src\components\ui\accordion.tsx", "TypeScript JSX", 0, 45, 0, 0, 8, 53
+"c:\Study\VKR\Imperion-Pro\src\components\ui\alert-dialog.tsx", "TypeScript JSX", 0, 91, 0, 0, 14, 105
+"c:\Study\VKR\Imperion-Pro\src\components\ui\alert.tsx", "TypeScript JSX", 0, 37, 0, 0, 7, 44
+"c:\Study\VKR\Imperion-Pro\src\components\ui\aspect-ratio.tsx", "TypeScript JSX", 0, 3, 0, 0, 3, 6
+"c:\Study\VKR\Imperion-Pro\src\components\ui\avatar.tsx", "TypeScript JSX", 0, 33, 0, 0, 6, 39
+"c:\Study\VKR\Imperion-Pro\src\components\ui\badge.tsx", "TypeScript JSX", 0, 24, 0, 0, 6, 30
+"c:\Study\VKR\Imperion-Pro\src\components\ui\breadcrumb.tsx", "TypeScript JSX", 0, 80, 0, 0, 11, 91
+"c:\Study\VKR\Imperion-Pro\src\components\ui\button.tsx", "TypeScript JSX", 0, 46, 0, 0, 6, 52
+"c:\Study\VKR\Imperion-Pro\src\components\ui\calendar.tsx", "TypeScript JSX", 0, 50, 0, 0, 5, 55
+"c:\Study\VKR\Imperion-Pro\src\components\ui\card.tsx", "TypeScript JSX", 0, 35, 0, 0, 9, 44
+"c:\Study\VKR\Imperion-Pro\src\components\ui\carousel.tsx", "TypeScript JSX", 0, 195, 0, 0, 30, 225
+"c:\Study\VKR\Imperion-Pro\src\components\ui\chart.tsx", "TypeScript JSX", 0, 266, 0, 2, 36, 304
+"c:\Study\VKR\Imperion-Pro\src\components\ui\checkbox.tsx", "TypeScript JSX", 0, 23, 0, 0, 4, 27
+"c:\Study\VKR\Imperion-Pro\src\components\ui\collapsible.tsx", "TypeScript JSX", 0, 5, 0, 0, 5, 10
+"c:\Study\VKR\Imperion-Pro\src\components\ui\command.tsx", "TypeScript JSX", 0, 115, 0, 0, 18, 133
+"c:\Study\VKR\Imperion-Pro\src\components\ui\context-menu.tsx", "TypeScript JSX", 0, 161, 0, 0, 18, 179
+"c:\Study\VKR\Imperion-Pro\src\components\ui\dialog.tsx", "TypeScript JSX", 0, 83, 0, 0, 13, 96
+"c:\Study\VKR\Imperion-Pro\src\components\ui\drawer.tsx", "TypeScript JSX", 0, 75, 0, 0, 13, 88
+"c:\Study\VKR\Imperion-Pro\src\components\ui\dropdown-menu.tsx", "TypeScript JSX", 0, 162, 0, 0, 18, 180
+"c:\Study\VKR\Imperion-Pro\src\components\ui\form.tsx", "TypeScript JSX", 0, 105, 0, 0, 25, 130
+"c:\Study\VKR\Imperion-Pro\src\components\ui\hover-card.tsx", "TypeScript JSX", 0, 22, 0, 0, 6, 28
+"c:\Study\VKR\Imperion-Pro\src\components\ui\input-otp.tsx", "TypeScript JSX", 0, 54, 0, 0, 8, 62
+"c:\Study\VKR\Imperion-Pro\src\components\ui\input.tsx", "TypeScript JSX", 0, 19, 0, 0, 4, 23
+"c:\Study\VKR\Imperion-Pro\src\components\ui\label.tsx", "TypeScript JSX", 0, 13, 0, 0, 5, 18
+"c:\Study\VKR\Imperion-Pro\src\components\ui\menubar.tsx", "TypeScript JSX", 0, 189, 0, 0, 19, 208
+"c:\Study\VKR\Imperion-Pro\src\components\ui\navigation-menu.tsx", "TypeScript JSX", 0, 109, 0, 0, 12, 121
+"c:\Study\VKR\Imperion-Pro\src\components\ui\pagination.tsx", "TypeScript JSX", 0, 71, 0, 0, 11, 82
+"c:\Study\VKR\Imperion-Pro\src\components\ui\popover.tsx", "TypeScript JSX", 0, 24, 0, 0, 6, 30
+"c:\Study\VKR\Imperion-Pro\src\components\ui\progress.tsx", "TypeScript JSX", 0, 20, 0, 0, 4, 24
+"c:\Study\VKR\Imperion-Pro\src\components\ui\radio-group.tsx", "TypeScript JSX", 0, 32, 0, 0, 5, 37
+"c:\Study\VKR\Imperion-Pro\src\components\ui\resizable.tsx", "TypeScript JSX", 0, 32, 0, 0, 6, 38
+"c:\Study\VKR\Imperion-Pro\src\components\ui\scroll-area.tsx", "TypeScript JSX", 0, 34, 0, 0, 5, 39
+"c:\Study\VKR\Imperion-Pro\src\components\ui\select.tsx", "TypeScript JSX", 0, 130, 0, 0, 14, 144
+"c:\Study\VKR\Imperion-Pro\src\components\ui\separator.tsx", "TypeScript JSX", 0, 17, 0, 0, 4, 21
+"c:\Study\VKR\Imperion-Pro\src\components\ui\sheet.tsx", "TypeScript JSX", 0, 93, 0, 0, 15, 108
+"c:\Study\VKR\Imperion-Pro\src\components\ui\sidebar.tsx", "TypeScript JSX", 0, 572, 0, 12, 54, 638
+"c:\Study\VKR\Imperion-Pro\src\components\ui\skeleton.tsx", "TypeScript JSX", 0, 5, 0, 0, 3, 8
+"c:\Study\VKR\Imperion-Pro\src\components\ui\slider.tsx", "TypeScript JSX", 0, 20, 0, 0, 4, 24
+"c:\Study\VKR\Imperion-Pro\src\components\ui\sonner.tsx", "TypeScript JSX", 0, 23, 0, 0, 5, 28
+"c:\Study\VKR\Imperion-Pro\src\components\ui\switch.tsx", "TypeScript JSX", 0, 24, 0, 0, 4, 28
+"c:\Study\VKR\Imperion-Pro\src\components\ui\table.tsx", "TypeScript JSX", 0, 62, 0, 0, 11, 73
+"c:\Study\VKR\Imperion-Pro\src\components\ui\tabs.tsx", "TypeScript JSX", 0, 47, 0, 0, 7, 54
+"c:\Study\VKR\Imperion-Pro\src\components\ui\textarea.tsx", "TypeScript JSX", 0, 17, 0, 0, 5, 22
+"c:\Study\VKR\Imperion-Pro\src\components\ui\toast.tsx", "TypeScript JSX", 0, 99, 0, 0, 13, 112
+"c:\Study\VKR\Imperion-Pro\src\components\ui\toaster.tsx", "TypeScript JSX", 0, 22, 0, 0, 3, 25
+"c:\Study\VKR\Imperion-Pro\src\components\ui\toggle-group.tsx", "TypeScript JSX", 0, 41, 0, 0, 9, 50
+"c:\Study\VKR\Imperion-Pro\src\components\ui\toggle.tsx", "TypeScript JSX", 0, 32, 0, 0, 6, 38
+"c:\Study\VKR\Imperion-Pro\src\components\ui\tooltip.tsx", "TypeScript JSX", 0, 22, 0, 0, 7, 29
+"c:\Study\VKR\Imperion-Pro\src\components\ui\use-toast.ts", "TypeScript", 2, 0, 0, 0, 2, 4
+"c:\Study\VKR\Imperion-Pro\src\hooks\use-mobile.tsx", "TypeScript JSX", 0, 15, 0, 0, 5, 20
+"c:\Study\VKR\Imperion-Pro\src\hooks\use-toast.ts", "TypeScript", 154, 0, 0, 2, 31, 187
+"c:\Study\VKR\Imperion-Pro\src\index.css", "CSS", 0, 0, 199, 6, 37, 242
+"c:\Study\VKR\Imperion-Pro\src\lib\pdfExport.ts", "TypeScript", 339, 0, 0, 70, 72, 481
+"c:\Study\VKR\Imperion-Pro\src\lib\piston.ts", "TypeScript", 69, 0, 0, 0, 11, 80
+"c:\Study\VKR\Imperion-Pro\src\lib\supabaseClient.ts", "TypeScript", 9, 0, 0, 0, 4, 13
+"c:\Study\VKR\Imperion-Pro\src\lib\utils.ts", "TypeScript", 5, 0, 0, 0, 2, 7
+"c:\Study\VKR\Imperion-Pro\src\main.tsx", "TypeScript JSX", 0, 4, 0, 0, 2, 6
+"c:\Study\VKR\Imperion-Pro\src\pages\Auth.tsx", "TypeScript JSX", 0, 484, 0, 4, 43, 531
+"c:\Study\VKR\Imperion-Pro\src\pages\Index.tsx", "TypeScript JSX", 0, 19, 0, 0, 3, 22
+"c:\Study\VKR\Imperion-Pro\src\pages\NotFound.tsx", "TypeScript JSX", 0, 20, 0, 0, 5, 25
+"c:\Study\VKR\Imperion-Pro\src\pages\admin\AdminDashboard.tsx", "TypeScript JSX", 0, 600, 0, 14, 37, 651
+"c:\Study\VKR\Imperion-Pro\src\pages\admin\AdminLayout.tsx", "TypeScript JSX", 0, 131, 0, 1, 11, 143
+"c:\Study\VKR\Imperion-Pro\src\pages\app\Achievements.tsx", "TypeScript JSX", 0, 109, 0, 0, 13, 122
+"c:\Study\VKR\Imperion-Pro\src\pages\app\AppLayout.tsx", "TypeScript JSX", 0, 221, 0, 2, 14, 237
+"c:\Study\VKR\Imperion-Pro\src\pages\app\Dashboard.tsx", "TypeScript JSX", 0, 413, 0, 6, 38, 457
+"c:\Study\VKR\Imperion-Pro\src\pages\app\LectureDetail.tsx", "TypeScript JSX", 0, 128, 0, 0, 13, 141
+"c:\Study\VKR\Imperion-Pro\src\pages\app\Lectures.tsx", "TypeScript JSX", 0, 129, 0, 0, 16, 145
+"c:\Study\VKR\Imperion-Pro\src\pages\app\LecturesLanguage.tsx", "TypeScript JSX", 0, 164, 0, 0, 25, 189
+"c:\Study\VKR\Imperion-Pro\src\pages\app\LessonDetail.tsx", "TypeScript JSX", 0, 673, 0, 7, 47, 727
+"c:\Study\VKR\Imperion-Pro\src\pages\app\Lessons.tsx", "TypeScript JSX", 0, 201, 0, 0, 20, 221
+"c:\Study\VKR\Imperion-Pro\src\pages\app\LessonsLanguage.tsx", "TypeScript JSX", 0, 266, 0, 0, 34, 300
+"c:\Study\VKR\Imperion-Pro\src\pages\app\Profile.backup.tsx", "TypeScript JSX", 0, 411, 0, 0, 37, 448
+"c:\Study\VKR\Imperion-Pro\src\pages\app\Profile.tsx", "TypeScript JSX", 0, 811, 0, 7, 46, 864
+"c:\Study\VKR\Imperion-Pro\src\pages\auth\AuthLayout.tsx", "TypeScript JSX", 0, 16, 0, 0, 5, 21
+"c:\Study\VKR\Imperion-Pro\src\pages\auth\Login.tsx", "TypeScript JSX", 0, 94, 0, 0, 11, 105
+"c:\Study\VKR\Imperion-Pro\src\pages\auth\Register.tsx", "TypeScript JSX", 0, 111, 0, 0, 12, 123
+"c:\Study\VKR\Imperion-Pro\src\pages\mentor\MentorDashboard.tsx", "TypeScript JSX", 0, 1625, 0, 32, 71, 1728
+"c:\Study\VKR\Imperion-Pro\src\pages\mentor\MentorLayout.tsx", "TypeScript JSX", 0, 134, 0, 1, 12, 147
+"c:\Study\VKR\Imperion-Pro\src\test\example.test.ts", "TypeScript", 6, 0, 0, 0, 2, 8
+"c:\Study\VKR\Imperion-Pro\src\test\setup.ts", "TypeScript", 14, 0, 0, 0, 2, 16
+"c:\Study\VKR\Imperion-Pro\src\vite-env.d.ts", "TypeScript", 7, 0, 0, 1, 3, 11
+"Total", "-", 605, 11260, 199, 203, 1301, 13568

@@ -15,8 +15,17 @@ import { Code2, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Auth() {
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -26,6 +35,13 @@ export default function Auth() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotDialogOpen, setForgotDialogOpen] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
 
   // Вход: логин + пароль
   const [loginUsername, setLoginUsername] = useState("");
@@ -40,11 +56,13 @@ export default function Auth() {
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
 
   useEffect(() => {
+    const isRecoveryMode = searchParams.get("type") === "recovery";
+
     const checkSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (session) {
+      if (session && !isRecoveryMode) {
         navigate("/app");
       }
     };
@@ -52,14 +70,24 @@ export default function Auth() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setResetDialogOpen(true);
+        return;
+      }
+      if (session && !isRecoveryMode) {
         navigate("/app");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("type") === "recovery") {
+      setResetDialogOpen(true);
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,6 +332,88 @@ export default function Auth() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите email для восстановления",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsForgotLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        forgotEmail.trim(),
+        {
+          redirectTo: `${window.location.origin}/auth?type=recovery`,
+        },
+      );
+      if (error) throw error;
+      toast({
+        title: "Письмо отправлено",
+        description: "Проверьте почту и перейдите по ссылке восстановления",
+      });
+      setForgotDialogOpen(false);
+      setForgotEmail("");
+    } catch (error: unknown) {
+      toast({
+        title: "Ошибка",
+        description: getErrorMessage(error, "Не удалось отправить письмо"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast({
+        title: "Ошибка",
+        description: "Новый пароль должен содержать минимум 6 символов",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Ошибка",
+        description: "Пароли не совпадают",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw error;
+
+      toast({
+        title: "Пароль обновлён",
+        description: "Теперь вы можете войти с новым паролем",
+      });
+      setResetDialogOpen(false);
+      setNewPassword("");
+      setConfirmNewPassword("");
+      navigate("/auth");
+    } catch (error: unknown) {
+      toast({
+        title: "Ошибка",
+        description: getErrorMessage(error, "Не удалось сменить пароль"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-grid opacity-30" />
@@ -385,6 +495,14 @@ export default function Auth() {
                         )}
                       </button>
                     </div>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto p-0 text-xs text-primary"
+                      onClick={() => setForgotDialogOpen(true)}
+                    >
+                      Забыли пароль?
+                    </Button>
                   </div>
 
                   <Button
@@ -525,6 +643,74 @@ export default function Auth() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={forgotDialogOpen} onOpenChange={setForgotDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Восстановление пароля</DialogTitle>
+            <DialogDescription>
+              Укажите email, на который будет отправлена ссылка для смены пароля
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="ivan@example.com"
+                autoComplete="email"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isForgotLoading}>
+              {isForgotLoading ? "Отправка..." : "Отправить ссылку"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Смена пароля</DialogTitle>
+            <DialogDescription>
+              Введите новый пароль для вашего аккаунта
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-password">Новый пароль</Label>
+              <Input
+                id="reset-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Минимум 6 символов"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reset-password-confirm">Повторите пароль</Label>
+              <Input
+                id="reset-password-confirm"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isResetLoading}>
+              {isResetLoading ? "Смена..." : "Изменить пароль"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
