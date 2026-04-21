@@ -117,11 +117,19 @@
 
     html {
         scroll-behavior: smooth;
+        overflow-y: scroll;
+        scrollbar-gutter: stable;
     }
 
     body {
         @apply bg-background text-foreground font-sans antialiased;
         font-family: "Inter", system-ui, sans-serif;
+        overflow-y: auto;
+        min-height: 100vh;
+    }
+
+    body[data-scroll-locked] {
+        overflow-y: scroll !important;
     }
 
     h1,
