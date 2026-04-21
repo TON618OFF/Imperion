@@ -8,6 +8,8 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
   height?: number;
   placeholder?: string;
+  textareaId?: string;
+  textareaName?: string;
 }
 
 export default function MarkdownEditor({
@@ -15,6 +17,8 @@ export default function MarkdownEditor({
   onChange,
   height = 400,
   placeholder = "Введите текст в формате Markdown...",
+  textareaId,
+  textareaName,
 }: MarkdownEditorProps) {
   const [activeTab, setActiveTab] = useState<string>("edit");
 
@@ -39,6 +43,8 @@ export default function MarkdownEditor({
               visibleDragbar={false}
               textareaProps={{
                 placeholder: placeholder,
+                id: textareaId,
+                name: textareaName,
               }}
             />
           </div>
@@ -67,6 +73,8 @@ export default function MarkdownEditor({
               visibleDragbar={false}
               textareaProps={{
                 placeholder: placeholder,
+                id: textareaId,
+                name: textareaName,
               }}
             />
           </div>

@@ -1077,7 +1077,9 @@ export default function MentorDashboard() {
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label>Порядок уроков (drag and drop)</Label>
+                      <div className="text-sm font-medium">
+                        Порядок уроков (drag and drop)
+                      </div>
                       <div className="rounded-md border border-border p-3 space-y-2 bg-background/60">
                         {lessonOrderIds.map((id) => {
                           const isCurrent = editingLesson ? id === editingLesson.id : id === DRAFT_LESSON_ID;
@@ -1353,9 +1355,9 @@ export default function MentorDashboard() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="content-markdown">
+                <div className="text-sm font-medium">
                   Описание задания (Markdown)
-                </Label>
+                </div>
                 <MarkdownEditor
                   value={contentForm.content_markdown}
                   onChange={(value) =>
@@ -1368,6 +1370,8 @@ export default function MentorDashboard() {
 
 Напишите программу, которая..."
                   height={400}
+                  textareaId="content-markdown"
+                  textareaName="content-markdown"
                 />
               </div>
 
@@ -1434,6 +1438,8 @@ export default function MentorDashboard() {
                             onChange={(value) => updateHint(index, value)}
                             placeholder={`Подсказка ${index + 1} (Markdown)`}
                             height={200}
+                            textareaId={`hint-markdown-${index}`}
+                            textareaName={`hint-markdown-${index}`}
                           />
                         </div>
                         <Button
@@ -1545,7 +1551,7 @@ export default function MentorDashboard() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="lecture-summary">Краткое описание</Label>
+                      <div className="text-sm font-medium">Краткое описание</div>
                       <MarkdownEditor
                         value={lectureForm.summary || ""}
                         onChange={(value) =>
@@ -1556,6 +1562,8 @@ export default function MentorDashboard() {
                         }
                         placeholder="Краткое описание лекции"
                         height={200}
+                        textareaId="lecture-summary"
+                        textareaName="lecture-summary"
                       />
                     </div>
                     <div className="grid gap-2">
@@ -1579,7 +1587,9 @@ export default function MentorDashboard() {
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label>Порядок лекций (drag and drop)</Label>
+                      <div className="text-sm font-medium">
+                        Порядок лекций (drag and drop)
+                      </div>
                       <div className="rounded-md border border-border p-3 space-y-2 bg-background/60">
                         {lectureOrderIds.map((id) => {
                           const isCurrent = editingLecture ? id === editingLecture.id : id === DRAFT_LECTURE_ID;
@@ -1888,9 +1898,9 @@ export default function MentorDashboard() {
                           />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor={`section-content-${index}`}>
+                          <div className="text-sm font-medium">
                             Контент (Markdown)
-                          </Label>
+                          </div>
                           <MarkdownEditor
                             value={section.content_markdown}
                             onChange={(value) =>
@@ -1904,6 +1914,8 @@ export default function MentorDashboard() {
 print('Пример кода')
 ```"
                             height={400}
+                            textareaId={`section-content-${index}`}
+                            textareaName={`section-content-${index}`}
                           />
                         </div>
                       </div>
